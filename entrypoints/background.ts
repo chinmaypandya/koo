@@ -13,14 +13,14 @@ export default defineBackground(() => {
 let saving = Promise.resolve();
 
 async function handle(posts: Post[]) {
-  const { apiKey, provider, model, filters } = (await browser.storage.local.get(['apiKey', 'provider', 'model', 'filters'])) as {
-    apiKey?: string; provider?: Provider; model?: string; filters?: Filters;
+  const { apiKey, provider, model, filters, prompt } = (await browser.storage.local.get(['apiKey', 'provider', 'model', 'filters', 'prompt'])) as {
+    apiKey?: string; provider?: Provider; model?: string; filters?: Filters; prompt?: string;
   };
   const p = provider ?? providerOf(apiKey ?? '');
   if (p !== 'openbroker' && !apiKey) throw new Error('Add your API key in the side panel, or pick the OpenBroker provider.');
   const byId = new Map(posts.map((post) => [post.id, post]));
   // Keep every verdict (match or not) so the side panel can show the AI's reasoning.
-  const verdicts = (await classify(posts, filters, apiKey ?? '', p, model))
+  const verdicts = (await classify(posts, filters, apiKey ?? '', p, model, prompt))
     .filter((r) => byId.has(r.id))
     .map((r) => {
       const { text, ...post } = byId.get(r.id)!;

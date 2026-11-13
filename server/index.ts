@@ -1,5 +1,5 @@
 import { createServer } from 'node:http';
-import { classify, PROVIDERS, type Provider } from '../lib/classify.ts';
+import { classify, MAX_PROMPT, PROVIDERS, type Provider } from '../lib/classify.ts';
 
 const { LLM_PROVIDER = 'openai', LLM_API_KEY, LLM_MODEL, PORT = '8787' } = process.env;
 if (!LLM_API_KEY) throw new Error('Set LLM_API_KEY in server/.env');
@@ -18,11 +18,12 @@ createServer(async (req, res) => {
     raw += chunk;
     if (raw.length > 200_000) return fail(res, 413, 'Request too large');
   }
-  let posts, filters, group = '';
+  let posts, filters, group = '', prompt: string | undefined;
   try {
     const body = JSON.parse(raw);
     if (!Array.isArray(body.posts) || body.posts.length < 1 || body.posts.length > 20) throw 0;
     if (typeof body.group === 'string') group = body.group.slice(0, 200);
+    if (typeof body.prompt === 'string') prompt = body.prompt.slice(0, MAX_PROMPT); // user's own rules; the JSON contract is always appended
     posts = body.posts.map((p: any) => {
       if (typeof p?.id !== 'string' || typeof p?.text !== 'string') throw 0;
       return { id: p.id.slice(0, 100), text: p.text.slice(0, 5000), url: '', group };
@@ -35,7 +36,7 @@ createServer(async (req, res) => {
   }
 
   try {
-    send(res, 200, await classify(posts, filters, LLM_API_KEY, LLM_PROVIDER as Provider, LLM_MODEL));
+    send(res, 200, await classify(posts, filters, LLM_API_KEY, LLM_PROVIDER as Provider, LLM_MODEL, prompt));
   } catch (e: any) {
     // Provider errors can echo key fragments, so details stay in the server log.
     // 502: the LLM call failed (classify already retried it), so the extension shouldn't retry again.

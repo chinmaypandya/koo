@@ -48,12 +48,12 @@ export default defineContentScript({
     let running = false;
     let lines: string[] = [];
     const status = (s: string) => {
-      console.log('[openbroker]', s);
+      console.log('[koo]', s);
       browser.storage.local.set({ status: s });
     };
     // Step-by-step activity shown in the side panel (newest first, last 200 lines).
     const log = (s: string) => {
-      console.log('[openbroker]', s);
+      console.log('[koo]', s);
       lines = [`${new Date().toLocaleTimeString()}  ${s}`, ...lines].slice(0, 200);
       browser.storage.local.set({ log: lines });
     };

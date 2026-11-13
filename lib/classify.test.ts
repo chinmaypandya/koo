@@ -6,7 +6,7 @@ test('providerOf', () => {
   assert.equal(providerOf('sk-ant-api03-x'), 'anthropic');
   assert.equal(providerOf('sk-proj-x'), 'openai');
   assert.equal(providerOf('AIzaSyx'), 'gemini');
-  assert.equal(providerOf(''), 'openbroker');
+  assert.equal(providerOf(''), 'koo');
 });
 
 test('phones finds numbers from any country, deduped, ignoring prices, dates and post ids', () => {

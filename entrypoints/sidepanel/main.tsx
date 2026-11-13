@@ -63,11 +63,11 @@ function App() {
     // Don't start a run that can't reach the AI: it would scroll, then stop at the first batch.
     if (!active) {
       const choice = s.provider ?? providerOf(s.apiKey ?? '');
-      if (choice === 'openbroker' && !s.token && !LOCAL) {
+      if (choice === 'koo' && !s.token && !LOCAL) {
         setPanel('credits');
         return browser.storage.local.set({ status: 'Sign in for Koo credits, or choose your own API key in Search settings.' });
       }
-      if (choice !== 'openbroker' && !s.apiKey) {
+      if (choice !== 'koo' && !s.apiKey) {
         setPanel('settings');
         return browser.storage.local.set({ status: `Add your ${choice} API key in Search settings, or choose Koo credits.` });
       }
@@ -186,7 +186,7 @@ function PromptEditor({ prompt }: { prompt?: string }) {
   );
 }
 
-// Koo credits: Google sign-in → OpenBroker token, balance, and UPI packs. Credits are added by the server when Razorpay
+// Koo credits: Google sign-in → Koo token, balance, and UPI packs. Credits are added by the server when Razorpay
 // confirms the payment (webhook), never by the extension.
 function Credits({ s }: { s: Record<string, any> }) {
   const [msg, setMsg] = useState('');
@@ -195,7 +195,7 @@ function Credits({ s }: { s: Record<string, any> }) {
     const res = await fetch(`${API}${path}`, {
       ...init,
       headers: { 'content-type': 'application/json', ...(s.token && { authorization: `Bearer ${s.token}` }) },
-    }).catch(() => { throw new Error(`Cannot reach OpenBroker at ${API}.`); });
+    }).catch(() => { throw new Error(`Cannot reach Koo at ${API}.`); });
     const body = await res.json().catch(() => ({}));
     if (res.status === 401) await browser.storage.local.remove(['token', 'email', 'credits']);
     if (!res.ok) throw new Error(body.error?.message ?? `Error ${res.status}`);
@@ -235,7 +235,7 @@ function Credits({ s }: { s: Record<string, any> }) {
   if (!s.token && LOCAL)
     return (
       <>
-        <p><b>Local mode.</b> No central OpenBroker API is set up yet, so Koo credits use your local one at <code>{API}</code>:
+        <p><b>Local mode.</b> No central Koo API is set up yet, so Koo credits use your local one at <code>{API}</code>:
           no sign-in and no credits; it uses the API key in <code>cloud/.dev.vars</code>.</p>
         <p className="muted">Start it with <code>npm run cloud:dev</code> (with <code>DEV_NO_AUTH=1</code> in <code>cloud/.dev.vars</code>).
           Once the cloud API is deployed and <code>WXT_API_URL</code> is set at build time, sign-in and UPI packs appear here.</p>
@@ -244,7 +244,7 @@ function Credits({ s }: { s: Record<string, any> }) {
   if (!s.token)
     return (
       <>
-        <p>Sign in to use Koo credits: Koo uses OpenBroker's AI, so you don't need your own API key.</p>
+        <p>Sign in to use Koo credits: Koo uses Koo's AI, so you don't need your own API key.</p>
         <button className="danger-free" onClick={signIn}>Sign in with Google</button>
         {msg && <p className="muted">{msg}</p>}
       </>
@@ -291,13 +291,13 @@ function Settings({ s }: { s: Record<string, any> }) {
       <label>
         Provider
         <select value={provider} onChange={(e) => browser.storage.local.set({ provider: e.target.value })}>
-          <option value="openbroker">🪙 Koo credits (no API key needed)</option>
+          <option value="koo">🪙 Koo credits (no API key needed)</option>
           <option value="openai">OpenAI (your key)</option>
           <option value="gemini">Google Gemini (your key)</option>
           <option value="anthropic">Anthropic (your key)</option>
         </select>
       </label>
-      {provider !== 'openbroker' && (
+      {provider !== 'koo' && (
         <>
           <label>
             API key <small>(stored unencrypted on this device only)</small>
@@ -347,7 +347,7 @@ function ExportBar({ matches, exportedAt }: { matches: any[]; exportedAt: number
   const download = async (rows: any[], kind: string) => {
     if (!rows.length) return;
     const url = URL.createObjectURL(new Blob(['\uFEFF' + toCsv(rows)], { type: 'text/csv;charset=utf-8' })); // BOM so Excel reads ₹ correctly
-    const a = Object.assign(document.createElement('a'), { href: url, download: `openbroker-matches-${kind}-${new Date().toISOString().slice(0, 10)}.csv` });
+    const a = Object.assign(document.createElement('a'), { href: url, download: `koo-matches-${kind}-${new Date().toISOString().slice(0, 10)}.csv` });
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
     await browser.storage.local.set({ exportedAt: Math.max(exportedAt, ...rows.map((r) => r.seenAt ?? 0)) });
@@ -417,6 +417,6 @@ function Verdicts({ items, empty }: { items: any[]; empty: string }) {
 
 // WXT 0.21 dev HTML loads this file twice (built chunk + dev server); keep only the last mount.
 const w = window as any;
-w.__obRoot?.unmount();
-w.__obRoot = createRoot(document.getElementById('root')!);
-w.__obRoot.render(<App />);
+w.__kooRoot?.unmount();
+w.__kooRoot = createRoot(document.getElementById('root')!);
+w.__kooRoot.render(<App />);

@@ -11,17 +11,19 @@ async function cloudClassify(posts: Post[], filters: Filters | undefined, prompt
     headers: { 'content-type': 'application/json', ...(token && { authorization: `Bearer ${token}` }) },
     body: JSON.stringify({ filters, prompt, group: posts[0]?.group, posts: posts.map(({ id, text }) => ({ id, text })) }),
   }).catch(() => {
-    throw new Error(LOCAL ? `Cannot reach the local OpenBroker API at ${API}. Start it with: npm run cloud:dev` : `Cannot reach OpenBroker at ${API}.`);
+    throw new Error(LOCAL ? `Cannot reach the local Koo API at ${API}. Start it with: npm run cloud:dev` : `Cannot reach Koo at ${API}.`);
   });
   const body = await res.json().catch(() => ({}));
   if (res.status === 401) await browser.storage.local.remove(['token', 'email', 'credits']); // token revoked → sign in again
   if (typeof body.credits === 'number') await browser.storage.local.set({ credits: body.credits });
-  if (!res.ok) throw new Error(body.error?.message ?? `OpenBroker error ${res.status}`);
+  if (!res.ok) throw new Error(body.error?.message ?? `Koo error ${res.status}`);
   return body.results;
 }
 
 export default defineBackground(() => {
   browser.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
+  // The "Koo credits" choice used to be stored as 'openbroker'; keep users' saved choice after the rename.
+  browser.storage.local.get('provider').then(({ provider }) => { if (provider === 'openbroker') browser.storage.local.set({ provider: 'koo' }); });
 
   browser.runtime.onMessage.addListener((msg, _sender, reply) => {
     if (msg.type !== 'classify') return;
@@ -37,10 +39,10 @@ async function handle(posts: Post[]) {
     apiKey?: string; provider?: Choice; model?: string; filters?: Filters; prompt?: string;
   };
   const p = provider ?? providerOf(apiKey ?? '');
-  if (p !== 'openbroker' && !apiKey) throw new Error('Add your API key in Search settings, or choose Koo credits.');
+  if (p !== 'koo' && !apiKey) throw new Error('Add your API key in Search settings, or choose Koo credits.');
   const byId = new Map(posts.map((post) => [post.id, post]));
   // Keep every verdict (match or not) so the side panel can show the AI's reasoning.
-  const results = p === 'openbroker' ? await cloudClassify(posts, filters, prompt) : await classify(posts, filters, apiKey!, p, model, prompt);
+  const results = p === 'koo' ? await cloudClassify(posts, filters, prompt) : await classify(posts, filters, apiKey!, p, model, prompt);
   const verdicts = results
     .filter((r) => byId.has(r.id))
     .map((r) => {

@@ -99,12 +99,12 @@ export const PROVIDERS = {
   gemini: { url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', model: 'gemini-2.5-flash' },
 };
 export type Provider = keyof typeof PROVIDERS;
-// What the user picks in the panel: their own key with a provider, or "openbroker" = Koo credits via our cloud API.
-export type Choice = Provider | 'openbroker';
+// What the user picks in the panel: their own key with a provider, or "koo" = Koo credits via our cloud API.
+export type Choice = Provider | 'koo';
 
 // Default guess only; the user picks in the side panel.
 export const providerOf = (key: string): Choice =>
-  !key ? 'openbroker' : key.startsWith('sk-ant-') ? 'anthropic' : key.startsWith('AIza') ? 'gemini' : 'openai';
+  !key ? 'koo' : key.startsWith('sk-ant-') ? 'anthropic' : key.startsWith('AIza') ? 'gemini' : 'openai';
 
 // `usage`, if given, is filled with the call's token counts so the caller can charge the real cost.
 export async function classify(

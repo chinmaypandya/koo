@@ -13,7 +13,7 @@ export default defineConfig({
   // Chrome 137+ ignores --load-extension, so load output/chrome-mv3-dev manually via chrome://extensions.
   webExt: { disabled: true },
   manifest: {
-    name: 'OpenBroker',
+    name: 'Koo',
     description: 'Reads Facebook group posts for you and finds flats that match.',
     permissions: ['storage', 'sidePanel', 'identity'],
     // Own-key providers + our cloud API (Koo credits).

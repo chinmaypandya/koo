@@ -1,8 +1,8 @@
 <p align="center">
-  <img src=".github/readme/icon.png" width="96" alt="OpenBroker icon: Koo the explorer bird">
+  <img src=".github/readme/icon.png" width="96" alt="Koo icon: Koo the explorer bird">
 </p>
 
-<h1 align="center">OpenBroker</h1>
+<h1 align="center">Koo</h1>
 
 <p align="center">
   <b>An AI agent in your browser that hunts for flats in Facebook groups for you.</b><br>
@@ -11,7 +11,7 @@
 
 <table>
   <tr>
-    <td width="40%" valign="top"><img src=".github/readme/panel.png" alt="OpenBroker side panel: status, Start/Stop, energy bar, side buttons and Koo flying over the city"></td>
+    <td width="40%" valign="top"><img src=".github/readme/panel.png" alt="Koo side panel: status, Start/Stop, energy bar, side buttons and Koo flying over the city"></td>
     <td valign="top">
 
 ### What it does
@@ -42,13 +42,13 @@ The extension is already built in **`output/chrome-mv3/`**. You only need Google
 | **2** | Open **`chrome://extensions`** in the address bar |
 | **3** | Turn on **Developer mode** (top-right switch). It only allows installing from a folder |
 | **4** | Click **Load unpacked** and select the **`output/chrome-mv3`** folder (the one with `manifest.json`) |
-| **5** | Click the 🧩 puzzle icon and **pin OpenBroker** |
+| **5** | Click the 🧩 puzzle icon and **pin Koo** |
 | **6** | Open the panel and go to **⚙️ Search settings**: choose how the AI is paid for and fill in what you want |
 | **7** | Open a Facebook flat-rental group (logged in) and press **Start**. Matches appear under **🏆** |
 
 | To… | Do this |
 |---|---|
-| **Update** | Download again (or `git pull`), then press ↻ on OpenBroker's card in `chrome://extensions`. Your data is kept |
+| **Update** | Download again (or `git pull`), then press ↻ on Koo's card in `chrome://extensions`. Your data is kept |
 | **Remove** | Press **Remove** on its card. This also deletes its stored data, including your API key |
 
 ---
@@ -105,10 +105,10 @@ between scenes is animated: take-off, landing, and flying down to the river.
 |---|---|---|
 | **You need** | An OpenAI, Google Gemini or Anthropic key | A Google account and UPI |
 | **Set up in** | ⚙️ Search settings → Provider | ⚙️ Provider = Koo credits, then 🪙 Sign in |
-| **Your key goes to** | Only that provider (stored on your computer, unencrypted) | Not needed; OpenBroker's key is used |
+| **Your key goes to** | Only that provider (stored on your computer, unencrypted) | Not needed; Koo's key is used |
 | **Cost** | Billed by your provider | ₹100 → 50 🪙 · ₹200 → 100 🪙 · ₹500 → 250 🪙 (1 🪙 = ₹1 of AI usage) |
 
-> **Local mode:** while no central OpenBroker API is deployed, Koo credits use a local one at `localhost:8787`, with
+> **Local mode:** while no central Koo API is deployed, Koo credits use a local one at `localhost:8787`, with
 > no sign-in and no credits. See **Running the cloud API → Local mode** below.
 
 ---
@@ -150,7 +150,7 @@ Chrome 137+ no longer lets tools auto-load extensions, so loading is always manu
 <br>
 
 ```text
-Panel ──sign in (Google)──► /auth      → OpenBroker token (only its hash is stored)
+Panel ──sign in (Google)──► /auth      → Koo token (only its hash is stored)
 Panel ──buy ₹200─────────► /checkout  → UPI-only Razorpay Payment Link (user id attached)
 User pays by UPI ────────► Razorpay ──► /razorpay-webhook → signature check → +100 🪙, exactly once
 Scanner ─batch of posts──► /classify  → checks credits → AI with your key → deducts the real token cost
@@ -158,7 +158,7 @@ Scanner ─batch of posts──► /classify  → checks credits → AI with you
 
 | Endpoint | Purpose |
 |---|---|
-| `POST /auth` | Google access token → OpenBroker token |
+| `POST /auth` | Google access token → Koo token |
 | `GET /me` | Email and credit balance |
 | `POST /checkout` | UPI-only Razorpay Payment Link for a ₹100 / ₹200 / ₹500 pack |
 | `POST /razorpay-webhook` | Verifies Razorpay's signature and credits the payment exactly once |
@@ -176,10 +176,10 @@ out of your half.
 
 | # | Where | What |
 |:-:|---|---|
-| 1 | **Cloudflare** | `npx wrangler login` → `npx wrangler d1 create openbroker` → paste `database_id` into `cloud/wrangler.toml` → `npm run cloud:db` |
+| 1 | **Cloudflare** | `npx wrangler login` → `npx wrangler d1 create koo` → paste `database_id` into `cloud/wrangler.toml` → `npm run cloud:db` |
 | 2 | **Prices** | In `cloud/wrangler.toml` set `LLM_PROVIDER`, `LLM_MODEL`, `PRICE_INPUT_INR_PER_1M`, `PRICE_OUTPUT_INR_PER_1M` (calls are refused while prices are 0) |
 | 3 | **Secrets** | `npx wrangler secret put <NAME> --config cloud/wrangler.toml` for `LLM_API_KEY`, `RZP_KEY_ID`, `RZP_KEY_SECRET`, `RZP_WEBHOOK_SECRET` |
-| 4 | **Deploy** | `npm run cloud:deploy` → note `https://openbroker.<you>.workers.dev` |
+| 4 | **Deploy** | `npm run cloud:deploy` → note `https://koo.<you>.workers.dev` |
 | 5 | **Razorpay** | Webhook `https://<worker>/razorpay-webhook`, event **`payment_link.paid`**, same secret as `RZP_WEBHOOK_SECRET` (test keys first) |
 | 6 | **Google** | OAuth client of type **Chrome Extension**, item ID **`ickjoonhepcjfhdiopbckhgalfdgijbj`** |
 | 7 | **Build** | `.env` with `WXT_API_URL=…` and `WXT_GOOGLE_CLIENT_ID=…` → `npm run build` → commit `output/chrome-mv3/` |
@@ -203,7 +203,7 @@ DEV_NO_AUTH=1        # honoured only for requests to localhost, never by a deplo
 Then run `npm run cloud:dev`, choose **🪙 Koo credits** and press Start.
 
 To test the full paid flow locally, add the Razorpay secrets to `cloud/.dev.vars`, create the local tables with
-`npx wrangler d1 execute openbroker --local --file cloud/schema.sql --config cloud/wrangler.toml`, then run `npm run cloud:dev`.
+`npx wrangler d1 execute koo --local --file cloud/schema.sql --config cloud/wrangler.toml`, then run `npm run cloud:dev`.
 
 </details>
 
@@ -213,6 +213,6 @@ To test the full paid flow locally, add the Razorpay secrets to `cloud/.dev.vars
 
 | | |
 |---|---|
-| **Facebook's terms** | Automated browsing is against them. OpenBroker only reads, runs only when you press Start, in a tab you can see, at a human pace. Use it on your own account at your own risk |
+| **Facebook's terms** | Automated browsing is against them. Koo only reads, runs only when you press Start, in a tab you can see, at a human pace. Use it on your own account at your own risk |
 | **Messaging** | Not automated. Contacts are collected so you can reach out yourself |
 | **Facebook changes** | If posts stop being found, the selectors in `SEL` (`entrypoints/content.ts`) need updating |

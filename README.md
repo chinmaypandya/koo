@@ -20,26 +20,47 @@ taking water and energy-drink breaks, and sleeping on a branch when stopped.
 - **Bring your own key** (OpenAI, Gemini or Anthropic) **or** use the OpenBroker server, which keeps the key server-side.
 - **Activity log** — every step the agent takes, for checking what it did.
 
-## Requirements
+## Use it yourself (no coding or building needed)
 
-- Node.js 22+ (the server and tests run TypeScript directly with Node's type stripping)
-- Google Chrome
+The ready-to-run extension is already built and committed in `output/chrome-mv3/`. You only need Google Chrome.
 
-## Setup
+1. **Download the project.**
+   - Easiest: on the GitHub page click **Code → Download ZIP**, then unzip it anywhere (e.g. your Documents folder).
+   - Or with git: `git clone <this repo's URL>`.
+2. **Open Chrome's extensions page.** Type `chrome://extensions` in the address bar and press Enter.
+3. **Turn on Developer mode** with the switch in the top-right corner. (Chrome only lets you install extensions from
+   a folder in this mode; it doesn't change anything else about your browser.)
+4. **Click "Load unpacked"** and select the `output/chrome-mv3` folder inside the project you downloaded.
+   Select that exact folder: it's the one that contains `manifest.json`.
+5. **Pin it.** Click the puzzle-piece icon in Chrome's toolbar and pin **OpenBroker** so Koo's icon is always visible.
+6. **Set it up.** Click the icon to open the side panel, then **⚙️ Search settings**:
+   - Pick an AI provider and paste your API key (OpenAI, Google Gemini or Anthropic). The key stays on your computer.
+   - Fill in what you're looking for: target location and max distance, budget, size, amenities, your gender.
+7. **Run it.** Open a Facebook flat-rental group (you must be logged in to Facebook), then press **Start**.
+   Koo takes off and starts reading posts; matches appear under **🏆 Matches**, with contact numbers, and can be
+   exported to Excel (CSV). Press **Stop** whenever you like.
+
+**Updating:** download the new version (or `git pull`), then click the ↻ reload button on OpenBroker's card in
+`chrome://extensions`. Your settings, matches and history are kept.
+
+**Removing:** click **Remove** on OpenBroker's card in `chrome://extensions`. This also deletes its stored data,
+including your API key.
+
+## Development
+
+Requirements: Node.js 22+ (the server and tests run TypeScript directly with Node's type stripping) and Google Chrome.
 
 ```bash
 npm install
-npm run build          # production build → output/chrome-mv3
+npm run build          # production build → output/chrome-mv3 (the committed, ready-to-load folder)
 ```
 
-Load it in Chrome:
+**After changing code, run `npm run build` and commit the updated `output/chrome-mv3/`** so people who download the
+project get your changes without building.
 
-1. Open `chrome://extensions` and turn on **Developer mode**.
-2. **Load unpacked** → choose `output/chrome-mv3`.
-3. Pin OpenBroker, open a Facebook group, and click the icon to open the side panel.
-
-For development, run `npm run dev` and load `output/chrome-mv3-dev` instead (keep the dev server running; it reloads
-the extension on changes). Chrome 137+ no longer lets tools auto-load extensions, so loading is always manual.
+For live reloading while coding, run `npm run dev` and load `output/chrome-mv3-dev` instead (keep the dev server
+running; that build doesn't work without it and is not committed). Chrome 137+ no longer lets tools auto-load
+extensions, so loading is always manual. The extension icons are generated into `public/icon/`.
 
 ## Choosing an AI provider
 
@@ -73,7 +94,7 @@ The server has no authentication yet and only listens on `127.0.0.1`. Add auth b
 | Command | What it does |
 |---|---|
 | `npm run dev` | Dev build with live reload → `output/chrome-mv3-dev` |
-| `npm run build` | Production build → `output/chrome-mv3` |
+| `npm run build` | Production build → `output/chrome-mv3` (commit it after changes) |
 | `npm test` | Unit tests (`lib/*.test.ts`, Node's built-in test runner) |
 | `npm run server` | OpenBroker LLM proxy server |
 

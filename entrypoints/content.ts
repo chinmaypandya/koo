@@ -1,5 +1,5 @@
 import { cleanText, longestLine, postId, type Post } from '@/lib/classify';
-import { BATCH_SIZE as BATCH } from '@/cloud/billing';
+import { BATCH_SIZE as BATCH } from '@/lib/pricing';
 import { ENERGY, addMatches, afterBreak, fullEnergy, isIrritated, tick, type Break } from '@/lib/energy';
 
 // All FB selectors live here — fix these first when Facebook changes its DOM.

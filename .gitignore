@@ -16,6 +16,9 @@ output/*
 docs/
 assets/
 
+# Cloud worker (paid Koo credits API) is private: kept locally / deployed to Cloudflare, not published here.
+cloud/
+
 # AI assistant config and memory
 .claude/
 CLAUDE.md

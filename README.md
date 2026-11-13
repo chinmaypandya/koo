@@ -123,7 +123,7 @@ between scenes is animated: take-off, landing, and flying down to the river.
 | `npm install` | Install dependencies |
 | `npm run build` | Production build → `output/chrome-mv3` **(commit it after changes, so downloads stay current)** |
 | `npm run dev` | Live-reload build → load `output/chrome-mv3-dev` (needs the dev server running; not committed) |
-| `npm test` | Unit tests for `lib/` and `cloud/` (Node's built-in runner) |
+| `npm test` | Unit tests for `lib/` (Node's built-in runner); `npm run test:cloud` for the private worker |
 | `npm run cloud:dev` | Run the cloud API locally (Wrangler) |
 | `npm run cloud:deploy` | Deploy the cloud API to Cloudflare |
 | `npm run cloud:db` | Create the D1 tables (remote) |
@@ -135,8 +135,8 @@ between scenes is animated: take-off, landing, and flying down to the river.
 | `entrypoints/sidepanel/` | Panel UI (React) and Koo (`koo.tsx`) |
 | `lib/classify.ts` | Prompt, AI provider calls, post IDs, text cleanup, phone numbers & country codes |
 | `lib/energy.ts` · `sort.ts` · `csv.ts` | Koo's energy model · match ordering · CSV export |
-| `cloud/worker.ts` | Cloud API: sign-in, credits, UPI checkout, webhook, paid AI calls |
-| `cloud/billing.ts` · `schema.sql` | Packs, cost, webhook signature, exactly-once crediting (tested) · D1 tables |
+| `lib/pricing.ts` | Koo credits pricing shared with the worker: packs, 5 requests per credit, batch of 5, sign-up bonus |
+| `cloud/` *(private, not in this repo)* | The paid cloud API worker: sign-in, credits, UPI checkout, webhook, paid AI calls |
 | `wxt.config.ts` | Manifest and build config (the fixed extension `key` lives here) |
 
 Chrome 137+ no longer lets tools auto-load extensions, so loading is always manual. Icons are in `public/icon/`.
@@ -144,6 +144,8 @@ Chrome 137+ no longer lets tools auto-load extensions, so loading is always manu
 ---
 
 ## ☁️ Running the cloud API (operators)
+
+> The worker in `cloud/` is **private** and not published in this repository. The notes below are for its operator.
 
 <details>
 <summary><b>How Koo credits work</b> (Cloudflare Worker + D1, Razorpay UPI, Google sign-in)</summary>
@@ -165,7 +167,7 @@ Scanner ─5 posts────────► /classify  → checks credits → 
 | `POST /razorpay-webhook` | Verifies Razorpay's signature and credits the payment exactly once |
 | `POST /classify` | Up to 5 posts; charges 0.2 🪙; refuses below 0.2 🪙; failed AI calls cost nothing |
 
-**Pricing** (all in `cloud/billing.ts`): 1 credit = ₹1 paid = 5 AI requests; a request is one batch of 5 posts
+**Pricing** (all in `lib/pricing.ts`): 1 credit = ₹1 paid = 5 AI requests; a request is one batch of 5 posts
 (0.2 credits); minimum top-up ₹100; new accounts get 5 free credits. The API rejects requests with more than 5 posts.
 Your margin is ₹0.20 per request minus the AI provider's cost for 5 posts; Razorpay takes about 2% + GST per payment.
 
@@ -179,7 +181,7 @@ Your margin is ₹0.20 per request minus the AI provider's cost for 5 posts; Raz
 | # | Where | What |
 |:-:|---|---|
 | 1 | **Cloudflare** | `npx wrangler login` → `npx wrangler d1 create koo` → paste `database_id` into `cloud/wrangler.toml` → `npm run cloud:db` |
-| 2 | **Model** | In `cloud/wrangler.toml` set `LLM_PROVIDER` and `LLM_MODEL` (pricing is in `cloud/billing.ts`) |
+| 2 | **Model** | In `cloud/wrangler.toml` set `LLM_PROVIDER` and `LLM_MODEL` (pricing is in `lib/pricing.ts`) |
 | 3 | **Secrets** | `npx wrangler secret put <NAME> --config cloud/wrangler.toml` for `LLM_API_KEY`, `RZP_KEY_ID`, `RZP_KEY_SECRET`, `RZP_WEBHOOK_SECRET` |
 | 4 | **Deploy** | `npm run cloud:deploy` → note `https://koo.<you>.workers.dev` |
 | 5 | **Razorpay** | Webhook `https://<worker>/razorpay-webhook`, event **`payment_link.paid`**, same secret as `RZP_WEBHOOK_SECRET` (test keys first) |

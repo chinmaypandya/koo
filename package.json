@@ -6,11 +6,12 @@
   "scripts": {
     "dev": "wxt",
     "build": "wxt build",
-    "test": "node --test lib/ cloud/",
+    "test": "node --test lib/",
     "postinstall": "wxt prepare",
     "cloud:dev": "wrangler dev --config cloud/wrangler.toml",
     "cloud:deploy": "wrangler deploy --config cloud/wrangler.toml",
-    "cloud:db": "wrangler d1 execute koo --remote --file cloud/schema.sql --config cloud/wrangler.toml"
+    "cloud:db": "wrangler d1 execute koo --remote --file cloud/schema.sql --config cloud/wrangler.toml",
+    "test:cloud": "node --test cloud/"
   },
   "dependencies": {
     "react": "^19.3.1",

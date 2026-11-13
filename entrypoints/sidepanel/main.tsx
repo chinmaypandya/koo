@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { DEFAULT_PROMPT, MAX_PROMPT, PROVIDERS, phones, providerOf, type Choice } from '@/lib/classify';
 import { API, LOCAL } from '@/lib/api';
-import { PACKS, REQUESTS_PER_CREDIT, SIGNUP_BONUS, creditsFor } from '@/cloud/billing';
+import { PACKS, REQUESTS_PER_CREDIT, SIGNUP_BONUS, creditsFor } from '@/lib/pricing';
 import { sortResults, type Sort, type SortKey } from '@/lib/sort';
 import { toCsv } from '@/lib/csv';
 import { KooStage, STATES, stateOf } from './koo';

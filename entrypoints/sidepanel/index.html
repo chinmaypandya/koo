@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>OpenBroker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+    <style>
+      /* Layout: compact fixed top row (status card + Start/Stop) and energy bar; Koo in the centre over a living scene
+         (city while searching, tree branch while sleeping, riverbank on breaks); square icon buttons down both sides
+         open one scrollable panel at a time.
+         Neo-brutalist (after loot-drop.io): 3px black borders, square corners, hard offset shadows. Deliberately light-only. */
+      :root {
+        --bg: #fdfbf7; --fg: #0a0a0a; --muted: #666666; --line: #0a0a0a; --card: #ffffff;
+        --yellow: #ffd600; --green: #00c853; --green-l: #e5fff0; --red: #b91c1c; --red-l: #ffe5ef; --blue: #2979ff;
+        --b: 3px solid var(--line); --shadow: 4px 4px 0 var(--line); --shadow-hover: 2px 2px 0 var(--line);
+        --font: "Space Grotesk", -apple-system, BlinkMacSystemFont, sans-serif; --mono: "Space Mono", ui-monospace, monospace;
+        color-scheme: light;
+      }
+      * { box-sizing: border-box; }
+      html, body { height: 100%; }
+      body { margin: 0; overflow: hidden; background: var(--bg); color: var(--fg); font: 500 14px/1.45 var(--font);
+        background-image: radial-gradient(#0000001a 1px, transparent 1px); background-size: 16px 16px; }
+      a { color: var(--blue); font-weight: 700; }
+      small, .muted { color: var(--muted); }
+
+      .top { position: fixed; z-index: 2; top: 10px; left: 10px; right: 10px; height: 44px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+      .bubble { min-width: 0; overflow: hidden; background: var(--card); border: var(--b); box-shadow: var(--shadow); padding: 3px 8px; }
+
+      /* Koo + scenes (all behind the UI). Moving between scenes animates `top`, which reads as take-off / landing. */
+      .scenes { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+      .scene { position: absolute; inset: 0; opacity: 0; transition: opacity .9s ease; overflow: hidden; }
+      .scene.on { opacity: 1; }
+      .buddy { position: fixed; z-index: 1; left: 50%; width: min(56vw, 220px); height: 30vh; transform: translate(-50%, -50%);
+        pointer-events: none; transition: top 1.4s cubic-bezier(.45, 0, .25, 1); }
+      .buddy.at-sky { top: 44%; } .buddy.at-tree { top: 56%; } .buddy.at-river { top: 60%; }
+      .koo, .koo-svg { width: 100%; height: 100%; overflow: visible; }
+
+      .sky { background: linear-gradient(#dbeafe, var(--bg) 80%); }
+      .skyline { position: absolute; left: 0; bottom: 0; width: 200vw; animation: scroll linear infinite; }
+      .skyline.far { height: 30vh; fill: #93C5FD; animation-duration: 32s; }
+      .skyline.near { height: 18vh; fill: #0F172A; animation-duration: 14s; }
+      .cloud { position: absolute; width: 90px; height: 28px; background: #fff; border: var(--b); border-radius: 20px; animation: drift linear infinite; }
+      .cloud.c1 { top: 22%; animation-duration: 18s; } .cloud.c2 { top: 34%; width: 60px; animation-duration: 26s; animation-delay: -12s; }
+      .tree { background: linear-gradient(#1e293b, #475569); }
+      .moon { position: absolute; top: 18%; right: 16%; width: 46px; height: 46px; border-radius: 50%; background: #FEF3C7; border: var(--b); }
+      /* Branch top sits where Koo's feet land: buddy centre (56%) + 45% of its 30vh height. */
+      .branch { position: absolute; left: -6%; width: 60%; top: calc(56% + 13.5vh); height: 18px; background: #7a4a22; border: var(--b); border-radius: 0 12px 12px 0; }
+      .branch::after { content: ""; position: absolute; left: 18%; top: -26px; width: 44px; height: 26px; background: #16a34a; border: var(--b); border-radius: 50% 50% 0 50%; }
+      .river { background: linear-gradient(#e0f2fe, var(--bg) 70%); }
+      .bank { position: absolute; left: 0; right: 0; top: calc(60% + 13.5vh); height: 5vh; background: #22c55e; border-top: var(--b); }
+      .water { position: absolute; left: 0; right: 0; top: calc(65% + 13.5vh); bottom: 0; border-top: var(--b);
+        background: repeating-linear-gradient(90deg, #2563EB 0 26px, #3b82f6 26px 52px); background-size: 104px 100%; animation: flow 3s linear infinite; }
+
+      .energy { position: fixed; z-index: 2; top: 62px; left: 10px; right: 10px; height: 20px; display: flex; gap: 3px; align-items: stretch;
+        background: var(--card); border: var(--b); box-shadow: var(--shadow-hover); padding: 2px; }
+      .energy span { flex: none; padding: 0 6px; font: 700 11px/14px var(--mono); }
+      .energy i { flex: 1; position: relative; background: var(--bg); border: 1px solid var(--line); overflow: hidden; }
+      .energy b { position: absolute; inset: 0 auto 0 0; transition: width 1s linear, background .4s; }
+      .energy b.on { background: var(--green); } .energy b.mid { background: var(--yellow); } .energy b.low { background: var(--red); }
+      .breaktimer { position: fixed; z-index: 2; left: 50%; top: calc(60% - 19vh); transform: translateX(-50%); white-space: nowrap;
+        background: var(--card); border: var(--b); box-shadow: var(--shadow); padding: 4px 10px; font: 700 13px var(--font); text-transform: uppercase; }
+      .breaktimer.bt-energy { background: var(--yellow); }
+      .breaktimer b { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+      .bubble strong { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+      .bubble strong, .bubble small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .bubble small { display: block; font: 11px/1.3 var(--mono); }
+
+      .side { position: fixed; z-index: 2; top: 94px; display: flex; flex-direction: column; gap: 10px; }
+      .side.left { left: 10px; } .side.right { right: 10px; }
+      .sq { position: relative; width: 42px; height: 42px; display: grid; place-items: center; font-size: 20px; cursor: pointer;
+        background: var(--card); border: var(--b); box-shadow: var(--shadow); transition: transform .08s, box-shadow .08s; }
+      .sq:hover { transform: translate(2px, 2px); box-shadow: var(--shadow-hover); }
+      .sq[aria-pressed="true"] { background: var(--yellow); transform: translate(4px, 4px); box-shadow: none; }
+      .sq[data-armed] { background: var(--red); color: #fff; }
+      /* Hover/focus labels in the panel's own style; they open toward the middle. */
+      .sq::after { content: attr(data-tip); position: absolute; top: 50%; transform: translateY(-50%); z-index: 5; white-space: nowrap;
+        background: var(--card); border: var(--b); box-shadow: var(--shadow-hover); padding: 3px 8px; color: var(--fg);
+        font: 700 12px var(--font); text-transform: uppercase; letter-spacing: .04em; opacity: 0; pointer-events: none; transition: opacity .12s; }
+      .side.left .sq::after { left: calc(100% + 12px); } .side.right .sq::after { right: calc(100% + 12px); }
+      .sq:hover::after, .sq:focus-visible::after { opacity: 1; }
+      .exportbar { display: flex; gap: 8px; margin-bottom: 10px; }
+      .exportbar button { flex: 1; padding: 6px; cursor: pointer; background: var(--bg); border: var(--b); box-shadow: var(--shadow-hover);
+        font: 700 12px var(--font); text-transform: uppercase; }
+      .badge { position: absolute; top: -9px; right: -9px; min-width: 20px; padding: 0 4px; background: var(--fg); color: #fff;
+        font: 700 11px/18px var(--mono); text-align: center; }
+
+      /* Panels open just below the pet's face so it stays visible. */
+      .modal { position: fixed; z-index: 3; top: 50%; transform: translateY(-50%); max-height: calc(100% - 190px); /* stays clear of the top row + energy bar */
+        left: 10px; right: 10px; /* full width; may cover the side buttons, it has its own ✕ */ display: flex; flex-direction: column;
+        background: var(--card); border: var(--b); box-shadow: var(--shadow); animation: rise .2s ease-out; }
+      .modal header { display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; border-bottom: var(--b);
+        background: var(--yellow); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+      .modal header button { background: none; border: 0; font: 700 18px var(--font); cursor: pointer; line-height: 1; }
+      .modal .body { overflow: auto; padding: 10px; }
+
+      .go { cursor: pointer;
+        background: var(--yellow); border: var(--b); box-shadow: var(--shadow); font: 700 14px var(--font);
+        text-transform: uppercase; letter-spacing: .06em; transition: transform .08s, box-shadow .08s, background .2s; }
+      .go:hover { transform: translate(2px, 2px); box-shadow: var(--shadow-hover); }
+      .go:active { transform: translate(4px, 4px); box-shadow: none; }
+      .go.stop { background: var(--red); color: #fff; }
+      .go[data-busy] { background: var(--card); cursor: progress; }
+
+      label { display: block; margin-top: 10px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+      label small { text-transform: none; letter-spacing: 0; font-weight: 500; }
+      input, select { display: block; width: 100%; margin-top: 3px; padding: 7px 8px; border: var(--b); border-radius: 0;
+        background: var(--bg); color: var(--fg); font: 500 14px var(--font); }
+      pre.log { margin: 0; white-space: pre-wrap; font: 12px/1.45 var(--mono); }
+      button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+
+      ul.cards { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+      .card { background: var(--red-l); border: var(--b); border-left: 10px solid var(--red); box-shadow: var(--shadow-hover); padding: 8px 10px;
+        animation: pop .3s ease-out; min-width: 0; }
+      .card.match { background: var(--green-l); border-left-color: var(--green); }
+      .card { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 10px; padding: 0; }
+      .card .item-main { padding: 8px 0 8px 10px; min-width: 0; }
+      .card .title { font-weight: 700; }
+      .card .desc { font-size: 13px; }
+      .card .facts { font: 12px/1.4 var(--mono); color: var(--muted); }
+      .card .price { padding: 8px 10px 8px 0; text-align: right; font: 700 16px var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+      .card .price small { display: block; font-size: 11px; font-weight: 400; }
+      .card .price small.over { color: var(--red); } .card .price small.under { color: var(--green); }
+      .card footer { grid-column: 1 / -1; border-top: 2px dashed var(--line); padding: 5px 10px; font: 12px var(--mono); }
+      .card footer .num { font-weight: 700; user-select: all; } /* shown for copying; nothing is dialled or messaged */
+
+      .sortbar { position: sticky; top: -10px; z-index: 1; display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+        margin: -10px -10px 10px; padding: 8px 10px; background: var(--card); border-bottom: var(--b); }
+      .sortchip { display: inline-flex; border: var(--b); background: var(--bg); }
+      .sortchip.on { background: var(--yellow); box-shadow: var(--shadow-hover); }
+      .sortchip button { border: 0; background: none; padding: 3px 7px; font: 700 12px var(--font); cursor: pointer; text-transform: uppercase; }
+      .sortchip button + button { border-left: var(--b); }
+      .sortchip b { display: inline-block; min-width: 16px; margin-right: 4px; background: var(--fg); color: #fff; font: 700 11px/16px var(--mono); }
+
+      /* Koo poses and states (assets/avatar.md §4) */
+      .wing { transform-box: fill-box; transition: transform .4s; }
+      .wing.l { transform-origin: right top; } .wing.r { transform-origin: left top; }
+      .feet, .zz, .notes, .swirl { transform-box: fill-box; transition: opacity .4s; }
+      .pose-fly .koo-svg { animation: glide 1.2s ease-in-out infinite; }
+      .pose-fly .wing.l { animation: flapL .28s ease-in-out infinite alternate; }
+      .pose-fly .wing.r { animation: flapR .28s ease-in-out infinite alternate; }
+      .pose-fly .feet { opacity: 0; }
+      .st-irritated.pose-fly .wing { animation-duration: .5s; }
+      .st-irritated .swirl { animation: pulse 1.2s ease-in-out infinite; transform-origin: center; }
+      .st-dancing .koo-svg { animation: twostep .5s ease-in-out 4; }
+      .st-dancing .notes, .st-sleeping .zz { animation: float 2s ease-in-out infinite; }
+      .st-sleeping.pose-sit .koo-svg { animation: breathe 3s ease-in-out infinite; }
+      .st-sleeping .wing.l { transform: rotate(-8deg) translateX(10px); } .st-sleeping .wing.r { transform: rotate(8deg) translateX(-10px); }
+      .sip { transform-box: fill-box; transform-origin: 50% 100%; animation: sip 5s ease-in-out infinite; }
+      .st-error .koo-svg { animation: shake .4s ease-in-out 2; }
+
+      @keyframes scroll { to { transform: translateX(-50%); } }
+      @keyframes drift { from { transform: translateX(110vw); } to { transform: translateX(-120px); } }
+      @keyframes flow { to { background-position: 104px 0; } }
+      @keyframes glide { 0%, 100% { transform: translateY(0) rotate(6deg); } 50% { transform: translateY(-10px) rotate(4deg); } }
+      @keyframes flapL { from { transform: rotate(10deg); } to { transform: rotate(70deg); } }
+      @keyframes flapR { from { transform: rotate(-10deg); } to { transform: rotate(-70deg); } }
+      @keyframes twostep { 25% { transform: translate(-8px, -8px) rotate(-8deg); } 75% { transform: translate(8px, -8px) rotate(8deg); } }
+      @keyframes breathe { 50% { transform: scale(1.03, .97) translateY(3px); } }
+      @keyframes sip { 0%, 25%, 75%, 100% { transform: none; } 40%, 60% { transform: translate(-14px, -18px) rotate(-55deg); } }
+      @keyframes pulse { 50% { transform: scale(1.25); } }
+      @keyframes shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+      @keyframes float { 0% { transform: translateY(6px); opacity: 0; } 50% { opacity: 1; } 100% { transform: translateY(-10px); opacity: 0; } }
+      @keyframes rise { from { opacity: 0; } }
+      @keyframes pop { from { transform: translateY(6px); opacity: 0; } }
+      @media (prefers-reduced-motion: reduce) { *, *::before { animation: none !important; transition: none !important; } }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="./main.tsx"></script>
+  </body>
+</html>

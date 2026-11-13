@@ -1,0 +1,53 @@
+import { classify, phones, providerOf, toIntl, type Filters, type Post, type Provider } from '@/lib/classify';
+
+export default defineBackground(() => {
+  browser.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
+
+  browser.runtime.onMessage.addListener((msg, _sender, reply) => {
+    if (msg.type !== 'classify') return;
+    handle(msg.posts).then(reply, (e) => reply({ error: String(e?.message ?? e) }));
+    return true; // async reply
+  });
+});
+
+let saving = Promise.resolve();
+
+async function handle(posts: Post[]) {
+  const { apiKey, provider, model, filters } = (await browser.storage.local.get(['apiKey', 'provider', 'model', 'filters'])) as {
+    apiKey?: string; provider?: Provider; model?: string; filters?: Filters;
+  };
+  const p = provider ?? providerOf(apiKey ?? '');
+  if (p !== 'openbroker' && !apiKey) throw new Error('Add your API key in the side panel, or pick the OpenBroker provider.');
+  const byId = new Map(posts.map((post) => [post.id, post]));
+  // Keep every verdict (match or not) so the side panel can show the AI's reasoning.
+  const verdicts = (await classify(posts, filters, apiKey ?? '', p, model))
+    .filter((r) => byId.has(r.id))
+    .map((r) => {
+      const { text, ...post } = byId.get(r.id)!;
+      // LLMs sometimes return one number as a plain string; the panel expects a list or null.
+      const fromAi: string[] = Array.isArray(r.contact) ? r.contact.map(String) : r.contact ? [String(r.contact)] : [];
+      // Numbers found in the text by code always count, even if the AI missed them; dedupe by the last 10 digits.
+      const seen = new Set<string>();
+      const contact = [...fromAi, ...phones(text)].filter((n) => {
+        const key = n.replace(/\D/g, '').slice(-10);
+        return key.length >= 8 && !seen.has(key) && !!seen.add(key);
+      });
+      // Country: a number's own +code wins; otherwise the AI's guess (post → group name → your target location).
+      const countryCode = typeof r.country_code === 'string' && /^\+?\d{1,4}$/.test(r.country_code.trim()) ? `+${r.country_code.replace(/\D/g, '')}` : null;
+      return {
+        ...post, raw_text: text, ...r,
+        contact: contact.length ? contact.map((n) => toIntl(n, countryCode)) : null,
+        country_code: countryCode,
+        country_code_source: !contact.length ? null : contact.every((n) => n.trim().startsWith('+')) ? 'number' : countryCode ? 'ai' : null,
+        seenAt: Date.now(),
+      };
+    });
+  // Batches overlap now, so saves are queued one after another (otherwise one batch's write could drop another's).
+  // Results are read only after the slow AI call, so a "Clear history" during the call isn't undone.
+  await (saving = saving.catch(() => {}).then(async () => {
+    const { results = [] } = (await browser.storage.local.get('results')) as { results?: unknown[] };
+    // shortcut: keeps the newest 500 verdicts; matches older than that drop off too — split storage if users need a long match history.
+    await browser.storage.local.set({ results: [...verdicts, ...results].slice(0, 500) });
+  }));
+  return { ok: true, total: verdicts.length, found: verdicts.filter((v) => v.match).length };
+}

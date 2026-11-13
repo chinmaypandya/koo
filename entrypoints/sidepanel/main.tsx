@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { DEFAULT_PROMPT, MAX_PROMPT, PROVIDERS, phones, providerOf, type Choice } from '@/lib/classify';
-import { API } from '@/lib/api';
+import { API, LOCAL } from '@/lib/api';
 import { PACKS, creditsFor } from '@/cloud/billing';
 import { sortResults, type Sort, type SortKey } from '@/lib/sort';
 import { toCsv } from '@/lib/csv';
@@ -60,6 +60,18 @@ function App() {
   // Show "Starting…"/"Stopping…" (take-off/landing) right away; the scanner switches to searching/sleeping once it actually has.
   const toggle = async () => {
     if (busy) return;
+    // Don't start a run that can't reach the AI: it would scroll, then stop at the first batch.
+    if (!active) {
+      const choice = s.provider ?? providerOf(s.apiKey ?? '');
+      if (choice === 'openbroker' && !s.token && !LOCAL) {
+        setPanel('credits');
+        return browser.storage.local.set({ status: 'Sign in for Koo credits, or choose your own API key in Search settings.' });
+      }
+      if (choice !== 'openbroker' && !s.apiKey) {
+        setPanel('settings');
+        return browser.storage.local.set({ status: `Add your ${choice} API key in Search settings, or choose Koo credits.` });
+      }
+    }
     await browser.storage.local.set({ agent: active ? 'stopping' : 'starting' });
     await send(active ? 'stop' : 'start');
   };
@@ -220,6 +232,15 @@ function Credits({ s }: { s: Record<string, any> }) {
     }
   };
 
+  if (!s.token && LOCAL)
+    return (
+      <>
+        <p><b>Local mode.</b> No central OpenBroker API is set up yet, so Koo credits use your local one at <code>{API}</code>:
+          no sign-in and no credits; it uses the API key in <code>cloud/.dev.vars</code>.</p>
+        <p className="muted">Start it with <code>npm run cloud:dev</code> (with <code>DEV_NO_AUTH=1</code> in <code>cloud/.dev.vars</code>).
+          Once the cloud API is deployed and <code>WXT_API_URL</code> is set at build time, sign-in and UPI packs appear here.</p>
+      </>
+    );
   if (!s.token)
     return (
       <>

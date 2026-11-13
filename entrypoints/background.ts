@@ -1,16 +1,18 @@
 import { classify, phones, providerOf, toIntl, type Choice, type Filters, type Post, type Result } from '@/lib/classify';
 
-import { API } from '@/lib/api';
+import { API, LOCAL } from '@/lib/api';
 
 // Koo credits mode: the cloud API calls the AI with our key and charges this user's credits.
 async function cloudClassify(posts: Post[], filters: Filters | undefined, prompt: string | undefined): Promise<Result[]> {
   const { token } = (await browser.storage.local.get('token')) as { token?: string };
-  if (!token) throw new Error('Sign in under 🪙 Koo credits, or choose your own API key in Search settings.');
+  if (!token && !LOCAL) throw new Error('Sign in under 🪙 Koo credits, or choose your own API key in Search settings.');
   const res = await fetch(`${API}/classify`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+    headers: { 'content-type': 'application/json', ...(token && { authorization: `Bearer ${token}` }) },
     body: JSON.stringify({ filters, prompt, group: posts[0]?.group, posts: posts.map(({ id, text }) => ({ id, text })) }),
-  }).catch(() => { throw new Error(`Cannot reach OpenBroker at ${API}.`); });
+  }).catch(() => {
+    throw new Error(LOCAL ? `Cannot reach the local OpenBroker API at ${API}. Start it with: npm run cloud:dev` : `Cannot reach OpenBroker at ${API}.`);
+  });
   const body = await res.json().catch(() => ({}));
   if (res.status === 401) await browser.storage.local.remove(['token', 'email', 'credits']); // token revoked → sign in again
   if (typeof body.credits === 'number') await browser.storage.local.set({ credits: body.credits });

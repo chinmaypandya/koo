@@ -11,6 +11,7 @@ interface Env {
   LLM_PROVIDER: string; LLM_API_KEY: string; LLM_MODEL?: string; // secret: LLM_API_KEY
   PRICE_INPUT_INR_PER_1M: string; PRICE_OUTPUT_INR_PER_1M: string; // your model's price, in ₹ per 1M tokens
   RZP_KEY_ID: string; RZP_KEY_SECRET: string; RZP_WEBHOOK_SECRET: string; // secrets
+  DEV_NO_AUTH?: string; // "1" only in cloud/.dev.vars: free, sign-in-less calls for the operator's own local use
 }
 type User = { id: string; email: string; credits: number };
 
@@ -79,11 +80,14 @@ async function webhook(req: Request, env: Env) {
 
 // Paid AI call: same input rules as the local server, then deduct the call's real cost from this user only.
 async function classifyPaid(req: Request, env: Env) {
-  const user = await userOf(req, env);
+  // Local mode: no token needed, nothing charged. Requires BOTH the dev flag and a localhost request, so a deployed
+  // worker can never serve free calls even if the flag leaked into its config.
+  const local = env.DEV_NO_AUTH === '1' && ['localhost', '127.0.0.1'].includes(new URL(req.url).hostname) && !req.headers.get('authorization');
+  const user = local ? null : await userOf(req, env);
   // shortcut: concurrent calls can each pass this check, so a balance can dip slightly below 0; fine at ₹-per-call scale.
-  if (user.credits <= 0) return fail(402, 'Out of Koo credits. Buy more in the 🪙 Koo credits panel.');
+  if (user && user.credits <= 0) return fail(402, 'Out of Koo credits. Buy more in the 🪙 Koo credits panel.');
   const inPrice = Number(env.PRICE_INPUT_INR_PER_1M), outPrice = Number(env.PRICE_OUTPUT_INR_PER_1M);
-  if (!(inPrice > 0 && outPrice > 0) || !(env.LLM_PROVIDER in PROVIDERS)) return fail(500, 'Server is not configured.');
+  if ((user && !(inPrice > 0 && outPrice > 0)) || !(env.LLM_PROVIDER in PROVIDERS)) return fail(500, 'Server is not configured.');
 
   const raw = await req.text();
   if (raw.length > 200_000) return fail(413, 'Request too large');
@@ -112,6 +116,7 @@ async function classifyPaid(req: Request, env: Env) {
     console.error('LLM call failed:', e?.message ?? e); // provider errors can echo key fragments: keep them in logs only
     return fail(502, 'The AI provider failed or is busy. Try again in a minute.');
   }
+  if (!user) return json({ results, credits: null, cost: 0 }); // local mode
   const cost = costInr(usage, inPrice, outPrice);
   await env.DB.batch([
     env.DB.prepare('UPDATE users SET credits = credits - ? WHERE id = ?').bind(cost, user.id),

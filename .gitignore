@@ -1,0 +1,25 @@
+# Dependencies and build output
+node_modules/
+output/
+.wxt/
+*.log
+
+# Secrets: real and example env files (variables are documented in README.md)
+.env
+.env.*
+**/.env
+**/.env.*
+
+# Local docs, design references and notes (kept on the dev machine only)
+docs/
+assets/
+
+# AI assistant config and memory
+.claude/
+CLAUDE.md
+noman-memory.md
+
+# OS / editor clutter
+.DS_Store
+.vscode/
+.idea/

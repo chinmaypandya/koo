@@ -107,7 +107,7 @@ between scenes is animated: take-off, landing, and flying down to the river.
 | **Set up in** | ⚙️ Search settings → Provider | ⚙️ Provider = Koo credits, then 🪙 Sign in |
 | **Your key goes to** | Only that provider (stored on your computer, unencrypted) | Not needed; Koo's key is used |
 | **Cost** | Billed by your provider | **1 🪙 = ₹1 = 5 AI requests** (5 posts each). Packs: ₹100 → 100 🪙 · ₹200 → 200 🪙 · ₹500 → 500 🪙 |
-| **Free to try** | — | **1 🪙 free** on sign-up (5 requests = 25 posts) |
+| **Free to try** | — | **5 🪙 free** on sign-up (25 requests = 125 posts) |
 
 > **Local mode:** while no central Koo API is deployed, Koo credits use a local one at `localhost:8787`, with
 > no sign-in and no credits. See **Running the cloud API → Local mode** below.
@@ -159,14 +159,14 @@ Scanner ─5 posts────────► /classify  → checks credits → 
 
 | Endpoint | Purpose |
 |---|---|
-| `POST /auth` | Google access token → Koo token; a new account starts with 1 free 🪙 |
+| `POST /auth` | Google access token → Koo token; a new account starts with 5 free 🪙 |
 | `GET /me` | Email and credit balance |
 | `POST /checkout` | UPI-only Razorpay Payment Link for a ₹100 / ₹200 / ₹500 pack |
 | `POST /razorpay-webhook` | Verifies Razorpay's signature and credits the payment exactly once |
 | `POST /classify` | Up to 5 posts; charges 0.2 🪙; refuses below 0.2 🪙; failed AI calls cost nothing |
 
 **Pricing** (all in `cloud/billing.ts`): 1 credit = ₹1 paid = 5 AI requests; a request is one batch of 5 posts
-(0.2 credits); minimum top-up ₹100; new accounts get 1 free credit. The API rejects requests with more than 5 posts.
+(0.2 credits); minimum top-up ₹100; new accounts get 5 free credits. The API rejects requests with more than 5 posts.
 Your margin is ₹0.20 per request minus the AI provider's cost for 5 posts; Razorpay takes about 2% + GST per payment.
 
 </details>

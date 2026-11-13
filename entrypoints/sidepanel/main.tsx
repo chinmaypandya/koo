@@ -244,7 +244,7 @@ function Credits({ s }: { s: Record<string, any> }) {
   if (!s.token)
     return (
       <>
-        <p>Sign in to use Koo credits: no API key needed. New accounts get {SIGNUP_BONUS} free credit ({REQUESTS_PER_CREDIT} AI requests).</p>
+        <p>Sign in to use Koo credits: no API key needed. New accounts get {SIGNUP_BONUS} free credits ({SIGNUP_BONUS * REQUESTS_PER_CREDIT} AI requests).</p>
         <button className="danger-free" onClick={signIn}>Sign in with Google</button>
         {msg && <p className="muted">{msg}</p>}
       </>

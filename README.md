@@ -106,7 +106,7 @@ between scenes is animated: take-off, landing, and flying down to the river.
 | **You need** | An OpenAI, Google Gemini or Anthropic key | A Google account and UPI |
 | **Set up in** | ⚙️ Search settings → Provider | ⚙️ Provider = Koo credits, then 🪙 Sign in |
 | **Your key goes to** | Only that provider (stored on your computer, unencrypted) | Not needed; Koo's key is used |
-| **Cost** | Billed by your provider | ₹100 → 50 🪙 · ₹200 → 100 🪙 · ₹500 → 250 🪙 (1 🪙 = ₹1 of AI usage) |
+| **Cost** | Billed by your provider | **1 🪙 = ₹1.** Packs: ₹100 → 100 🪙 · ₹200 → 200 🪙 · ₹500 → 500 🪙 (minimum ₹100) |
 
 > **Local mode:** while no central Koo API is deployed, Koo credits use a local one at `localhost:8787`, with
 > no sign-in and no credits. See **Running the cloud API → Local mode** below.
@@ -164,8 +164,8 @@ Scanner ─batch of posts──► /classify  → checks credits → AI with you
 | `POST /razorpay-webhook` | Verifies Razorpay's signature and credits the payment exactly once |
 | `POST /classify` | Refuses at 0 credits; failed AI calls cost nothing |
 
-Users get credits worth half of what they pay. Razorpay takes about 2% + GST per payment (check their pricing page)
-out of your half.
+1 credit = ₹1 paid, minimum top-up ₹100. Each AI call is charged at **2× the provider's real cost** (`MARKUP` in
+`cloud/billing.ts`), which is your margin. Razorpay takes about 2% + GST per payment (check their pricing page) out of it.
 
 </details>
 

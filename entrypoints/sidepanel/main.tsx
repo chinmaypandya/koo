@@ -253,7 +253,7 @@ function Credits({ s }: { s: Record<string, any> }) {
     <>
       <p className="muted">{s.email}</p>
       <p className="balance">🪙 {Number(s.credits ?? 0).toFixed(2)} <small>Koo credits</small></p>
-      <p className="muted">1 Koo credit = ₹1 of AI usage. Each AI batch costs a few paise.</p>
+      <p className="muted">1 Koo credit = ₹1. Minimum top-up ₹100. Each AI batch uses a fraction of a credit.</p>
       <div className="exportbar">
         {PACKS.map((r) => <button key={r} onClick={() => buy(r)}>₹{r} → {creditsFor(r)} 🪙</button>)}
       </div>

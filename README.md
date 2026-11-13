@@ -116,7 +116,16 @@ cost from that user only. **1 Koo credit = ₹1 of AI usage, and users get credi
    then `npm run build` and commit `output/chrome-mv3/`.
 7. **Keep your AI balance funded:** enable auto-recharge in your AI provider's billing settings.
 
-Local testing: put the same secrets in `cloud/.dev.vars` (git-ignored), run
+**Local mode (no central API yet):** if the extension is built without `WXT_API_URL`, Koo credits use
+`http://localhost:8787` with **no sign-in and no credits**. Run it on your machine:
+```bash
+# cloud/.dev.vars (git-ignored)
+LLM_API_KEY=sk-...      # your own provider key
+DEV_NO_AUTH=1           # only honoured for requests to localhost; never set it in Cloudflare
+```
+then `npm run cloud:dev`. Pick **🪙 Koo credits** in Search settings and press Start.
+
+Local testing of the full paid flow: put the same secrets in `cloud/.dev.vars` (git-ignored), run
 `npx wrangler d1 execute openbroker --local --file cloud/schema.sql --config cloud/wrangler.toml`, then `npm run cloud:dev`
 (serves on `http://localhost:8787`, which is the extension's default API URL).
 

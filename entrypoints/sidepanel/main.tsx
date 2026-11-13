@@ -1,6 +1,8 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { DEFAULT_PROMPT, MAX_PROMPT, PROVIDERS, phones, providerOf, type Provider } from '@/lib/classify';
+import { DEFAULT_PROMPT, MAX_PROMPT, PROVIDERS, phones, providerOf, type Choice } from '@/lib/classify';
+import { API, LOCAL } from '@/lib/api';
+import { PACKS, creditsFor } from '@/cloud/billing';
 import { sortResults, type Sort, type SortKey } from '@/lib/sort';
 import { toCsv } from '@/lib/csv';
 import { KooStage, STATES, stateOf } from './koo';
@@ -17,6 +19,7 @@ const FIELDS = [
 const PANELS = {
   settings: { icon: '⚙️', title: 'Search settings', tip: 'Search settings', side: 'left' },
   activity: { icon: '📜', title: 'Activity', tip: 'Activity log', side: 'left' },
+  credits: { icon: '🪙', title: 'Koo credits', tip: 'Koo credits · sign in & buy', side: 'left' },
   matches: { icon: '🏆', title: 'Matches', tip: 'Matches · sort & export', side: 'right' },
   decisions: { icon: '🗂️', title: 'All decisions', tip: 'All decisions', side: 'right' },
 } as const;
@@ -46,7 +49,7 @@ function App() {
   const busy = agent === 'starting' || agent === 'stopping';
   const active = agent !== 'sleeping' && agent !== 'error';
   const energy: number = active ? s.energy ?? 100 : 100; // stopped → full energy
-  const counts: Partial<Record<PanelId, number>> = { matches: matches.length, decisions: results.length };
+  const counts: Partial<Record<PanelId, number>> = { matches: matches.length, decisions: results.length, ...(s.token && { credits: Math.floor(s.credits ?? 0) }) };
 
   const send = async (type: string) => {
     const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
@@ -57,6 +60,18 @@ function App() {
   // Show "Starting…"/"Stopping…" (take-off/landing) right away; the scanner switches to searching/sleeping once it actually has.
   const toggle = async () => {
     if (busy) return;
+    // Don't start a run that can't reach the AI: it would scroll, then stop at the first batch.
+    if (!active) {
+      const choice = s.provider ?? providerOf(s.apiKey ?? '');
+      if (choice === 'openbroker' && !s.token && !LOCAL) {
+        setPanel('credits');
+        return browser.storage.local.set({ status: 'Sign in for Koo credits, or choose your own API key in Search settings.' });
+      }
+      if (choice !== 'openbroker' && !s.apiKey) {
+        setPanel('settings');
+        return browser.storage.local.set({ status: `Add your ${choice} API key in Search settings, or choose Koo credits.` });
+      }
+    }
     await browser.storage.local.set({ agent: active ? 'stopping' : 'starting' });
     await send(active ? 'stop' : 'start');
   };
@@ -92,6 +107,7 @@ function App() {
 
   const content: Record<PanelId, ReactNode> = {
     settings: <Settings s={s} />,
+    credits: <Credits s={s} />,
     // Hiding the panel only stops rendering; the log keeps recording in storage.
     activity: <pre className="log">{(s.log ?? []).join('\n') || 'Press Start to see each step here.'}</pre>,
     matches: (
@@ -170,9 +186,86 @@ function PromptEditor({ prompt }: { prompt?: string }) {
   );
 }
 
+// Koo credits: Google sign-in → OpenBroker token, balance, and UPI packs. Credits are added by the server when Razorpay
+// confirms the payment (webhook), never by the extension.
+function Credits({ s }: { s: Record<string, any> }) {
+  const [msg, setMsg] = useState('');
+  const poll = useRef<ReturnType<typeof setInterval>>(undefined);
+  const call = async (path: string, init: RequestInit = {}) => {
+    const res = await fetch(`${API}${path}`, {
+      ...init,
+      headers: { 'content-type': 'application/json', ...(s.token && { authorization: `Bearer ${s.token}` }) },
+    }).catch(() => { throw new Error(`Cannot reach OpenBroker at ${API}.`); });
+    const body = await res.json().catch(() => ({}));
+    if (res.status === 401) await browser.storage.local.remove(['token', 'email', 'credits']);
+    if (!res.ok) throw new Error(body.error?.message ?? `Error ${res.status}`);
+    return body;
+  };
+  const refresh = () => s.token && call('/me').then((b) => browser.storage.local.set({ credits: b.credits, email: b.email })).catch((e) => setMsg(e.message));
+  useEffect(() => {
+    refresh();
+    addEventListener('focus', refresh); // back from the payment tab → show the new balance
+    return () => (removeEventListener('focus', refresh), clearInterval(poll.current));
+  }, [s.token]);
+
+  const signIn = async () => {
+    try {
+      setMsg('Signing in…');
+      const { token: googleToken } = await browser.identity.getAuthToken({ interactive: true });
+      const b = await call('/auth', { method: 'POST', body: JSON.stringify({ googleToken }) });
+      await browser.storage.local.set({ token: b.token, email: b.email, credits: b.credits });
+      setMsg('');
+    } catch (e: any) {
+      setMsg(`Sign-in failed: ${e.message}`);
+    }
+  };
+  const buy = async (rupees: number) => {
+    try {
+      const { url } = await call('/checkout', { method: 'POST', body: JSON.stringify({ rupees }) });
+      await browser.tabs.create({ url });
+      setMsg('Pay with any UPI app in the new tab. Your credits appear here a few seconds after paying.');
+      clearInterval(poll.current);
+      let n = 0;
+      poll.current = setInterval(() => (refresh(), ++n >= 24 && clearInterval(poll.current)), 5000); // check for 2 minutes
+    } catch (e: any) {
+      setMsg(e.message);
+    }
+  };
+
+  if (!s.token && LOCAL)
+    return (
+      <>
+        <p><b>Local mode.</b> No central OpenBroker API is set up yet, so Koo credits use your local one at <code>{API}</code>:
+          no sign-in and no credits; it uses the API key in <code>cloud/.dev.vars</code>.</p>
+        <p className="muted">Start it with <code>npm run cloud:dev</code> (with <code>DEV_NO_AUTH=1</code> in <code>cloud/.dev.vars</code>).
+          Once the cloud API is deployed and <code>WXT_API_URL</code> is set at build time, sign-in and UPI packs appear here.</p>
+      </>
+    );
+  if (!s.token)
+    return (
+      <>
+        <p>Sign in to use Koo credits: Koo uses OpenBroker's AI, so you don't need your own API key.</p>
+        <button className="danger-free" onClick={signIn}>Sign in with Google</button>
+        {msg && <p className="muted">{msg}</p>}
+      </>
+    );
+  return (
+    <>
+      <p className="muted">{s.email}</p>
+      <p className="balance">🪙 {Number(s.credits ?? 0).toFixed(2)} <small>Koo credits</small></p>
+      <p className="muted">1 Koo credit = ₹1 of AI usage. Each AI batch costs a few paise.</p>
+      <div className="exportbar">
+        {PACKS.map((r) => <button key={r} onClick={() => buy(r)}>₹{r} → {creditsFor(r)} 🪙</button>)}
+      </div>
+      <p className="muted">Pay by UPI. {msg}</p>
+      <button className="reset" onClick={() => (browser.storage.local.remove(['token', 'email', 'credits']), setMsg(''))}>Sign out</button>
+    </>
+  );
+}
+
 function Settings({ s }: { s: Record<string, any> }) {
   const filters = s.filters ?? {};
-  const provider: Provider = s.provider ?? providerOf(s.apiKey ?? '');
+  const provider: Choice = s.provider ?? providerOf(s.apiKey ?? '');
   return (
     <>
       {FIELDS.map(([k, label, ph]) => (
@@ -198,7 +291,7 @@ function Settings({ s }: { s: Record<string, any> }) {
       <label>
         Provider
         <select value={provider} onChange={(e) => browser.storage.local.set({ provider: e.target.value })}>
-          <option value="openbroker">OpenBroker server (no key needed)</option>
+          <option value="openbroker">🪙 Koo credits (no API key needed)</option>
           <option value="openai">OpenAI (your key)</option>
           <option value="gemini">Google Gemini (your key)</option>
           <option value="anthropic">Anthropic (your key)</option>

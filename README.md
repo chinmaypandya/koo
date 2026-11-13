@@ -1,123 +1,215 @@
-# OpenBroker
+<p align="center">
+  <img src=".github/readme/icon.png" width="96" alt="OpenBroker icon: Koo the explorer bird">
+</p>
 
-A Chrome extension with an AI agent that hunts for flats in Facebook groups for you. Open a group, press **Start**, and
-it scrolls the feed, reads each post, and asks an LLM whether the flat matches your search — budget, size, location
-and distance, amenities and gender. Posts it has already read are skipped on later runs.
+<h1 align="center">OpenBroker</h1>
 
-Koo, the explorer bird, shows what the agent is doing: flying over the city while searching, dancing on a match,
-taking water and energy-drink breaks, and sleeping on a branch when stopped.
+<p align="center">
+  <b>An AI agent in your browser that hunts for flats in Facebook groups for you.</b><br>
+  Open a group, press <b>Start</b>. Koo reads every post and lists only the flats that match your search.
+</p>
 
-## Features
+<table>
+  <tr>
+    <td width="40%" valign="top"><img src=".github/readme/panel.png" alt="OpenBroker side panel: status, Start/Stop, energy bar, side buttons and Koo flying over the city"></td>
+    <td valign="top">
 
-- **Scroll & read** — scrolls the group feed at a human-like pace, expands "See more", and cleans Facebook's
-  anti-scraping noise out of the post text.
-- **Never reads a post twice** — remembers post IDs (30 days); "Clear history" resets them.
-- **AI filtering** — one LLM call per batch of posts (batch size configurable, partial batches sent after 30 s).
-  Each decision records verdict, rent, deposit, budget difference, BHK, distance estimate, amenities score, society,
-  location and contact numbers (with country code).
-- **Matches list** — cart-style items, multi-column ordering (rent / deposit / amenities) and **CSV export**
-  (all, or only new since the last export).
-- **Bring your own key** (OpenAI, Gemini or Anthropic) **or** use the OpenBroker server, which keeps the key server-side.
-- **Activity log** — every step the agent takes, for checking what it did.
+### What it does
 
-## Use it yourself (no coding or building needed)
+| | |
+|---|---|
+| 📜 **Reads posts for you** | Scrolls the group at a human pace, expands "See more", strips Facebook's hidden junk text |
+| 🔁 **Never twice** | Remembers posts it has read (30 days), so later runs only see new ones |
+| 🤖 **AI judges each flat** | Budget, size range, location & distance, amenities, gender, all in one AI call per batch |
+| 🏆 **Matches with contacts** | Rent, deposit, BHK, distance, society, phone numbers with country code |
+| ↕️ **Sort & export** | Order by rent, deposit, amenities (multi-column); export all or only new to Excel (CSV) |
+| 🔑 **Your key or credits** | Use your own OpenAI / Gemini / Anthropic key, **or** 🪙 Koo credits paid by UPI |
+| ✏️ **Your rules** | Edit the AI instructions yourself; the default is built in |
 
-The ready-to-run extension is already built and committed in `output/chrome-mv3/`. You only need Google Chrome.
+</td>
+  </tr>
+</table>
 
-1. **Download the project.**
-   - Easiest: on the GitHub page click **Code → Download ZIP**, then unzip it anywhere (e.g. your Documents folder).
-   - Or with git: `git clone <this repo's URL>`.
-2. **Open Chrome's extensions page.** Type `chrome://extensions` in the address bar and press Enter.
-3. **Turn on Developer mode** with the switch in the top-right corner. (Chrome only lets you install extensions from
-   a folder in this mode; it doesn't change anything else about your browser.)
-4. **Click "Load unpacked"** and select the `output/chrome-mv3` folder inside the project you downloaded.
-   Select that exact folder: it's the one that contains `manifest.json`.
-5. **Pin it.** Click the puzzle-piece icon in Chrome's toolbar and pin **OpenBroker** so Koo's icon is always visible.
-6. **Set it up.** Click the icon to open the side panel, then **⚙️ Search settings**:
-   - Pick an AI provider and paste your API key (OpenAI, Google Gemini or Anthropic). The key stays on your computer.
-   - Fill in what you're looking for: target location and max distance, budget, size, amenities, your gender.
-7. **Run it.** Open a Facebook flat-rental group (you must be logged in to Facebook), then press **Start**.
-   Koo takes off and starts reading posts; matches appear under **🏆 Matches**, with contact numbers, and can be
-   exported to Excel (CSV). Press **Stop** whenever you like.
+---
 
-**Updating:** download the new version (or `git pull`), then click the ↻ reload button on OpenBroker's card in
-`chrome://extensions`. Your settings, matches and history are kept.
+## 🚀 Use it yourself (no coding needed)
 
-**Removing:** click **Remove** on OpenBroker's card in `chrome://extensions`. This also deletes its stored data,
-including your API key.
+The extension is already built in **`output/chrome-mv3/`**. You only need Google Chrome.
 
-## Development
+| Step | Do this |
+|:-:|---|
+| **1** | **Download:** on GitHub click **Code → Download ZIP** and unzip it, or `git clone` the repo |
+| **2** | Open **`chrome://extensions`** in the address bar |
+| **3** | Turn on **Developer mode** (top-right switch). It only allows installing from a folder |
+| **4** | Click **Load unpacked** and select the **`output/chrome-mv3`** folder (the one with `manifest.json`) |
+| **5** | Click the 🧩 puzzle icon and **pin OpenBroker** |
+| **6** | Open the panel and go to **⚙️ Search settings**: choose how the AI is paid for and fill in what you want |
+| **7** | Open a Facebook flat-rental group (logged in) and press **Start**. Matches appear under **🏆** |
 
-Requirements: Node.js 22+ (the server and tests run TypeScript directly with Node's type stripping) and Google Chrome.
+| To… | Do this |
+|---|---|
+| **Update** | Download again (or `git pull`), then press ↻ on OpenBroker's card in `chrome://extensions`. Your data is kept |
+| **Remove** | Press **Remove** on its card. This also deletes its stored data, including your API key |
 
-```bash
-npm install
-npm run build          # production build → output/chrome-mv3 (the committed, ready-to-load folder)
-```
+---
 
-**After changing code, run `npm run build` and commit the updated `output/chrome-mv3/`** so people who download the
-project get your changes without building.
+## 🧭 The panel
 
-For live reloading while coding, run `npm run dev` and load `output/chrome-mv3-dev` instead (keep the dev server
-running; that build doesn't work without it and is not committed). Chrome 137+ no longer lets tools auto-load
-extensions, so loading is always manual. The extension icons are generated into `public/icon/`.
+| Button | Opens |
+|:-:|---|
+| ⚙️ | **Search settings**: location & max distance, budget, size, amenities, gender, batch size, AI provider, AI instructions |
+| 📜 | **Activity log**: every step the agent took |
+| 🪙 | **Koo credits**: sign in, balance, buy packs by UPI |
+| 🏆 | **Matches**: sort chips, CSV export, cart-style items with rent on the right and contacts at the bottom |
+| 🗂️ | **All decisions**: every post the AI checked, with its reason |
+| 🗑️ | **Clear history**: click twice; forgets read posts, decisions and the log |
 
-## Choosing an AI provider
+### Search filters
 
-In the side panel, open **Search settings**:
+| Filter | How the AI uses it |
+|---|---|
+| **Target location + max distance** | Estimates the distance from the post's area to yours; farther = not a match |
+| **Budget** | Rent above it = not a match; shows how far over or under (`+₹2,000` / `−₹4,000`) |
+| **Size** | A range: `2-3 BHK` means 2 ≤ size < 4, so 2, 2.5, 3 and 3.5 BHK pass |
+| **Amenities** | Scored 0–100% for sorting |
+| **Your gender** | Skips posts limited to another gender ("girls only", "male replacement") |
 
-- **OpenAI / Gemini / Anthropic (your key)** — paste your API key; it is stored unencrypted in the extension's local
-  storage on your machine only. The model field is optional.
-- **OpenBroker server (no key needed)** — run the server below; the extension never sees the key.
+---
 
-### Running the OpenBroker server
+## 🐦 Meet Koo
 
-Create `server/.env` (git-ignored):
+Koo is the explorer bird who shows what the agent is doing, and how tired it's getting.
 
-```bash
-LLM_PROVIDER=openai     # openai | gemini | anthropic
-LLM_API_KEY=sk-...      # required
-LLM_MODEL=              # optional; provider default if empty
-PORT=8787               # optional
-```
+<p align="center"><img src=".github/readme/koo-states.jpg" width="900" alt="Koo character sheet: searching, dancing, sleeping, irritated, drinking water"></p>
 
-Then:
+| State | Scene | When |
+|---|---|---|
+| ✈️ **Searching** | Flying over the city | Reading posts |
+| 🎉 **Dancing** | Mid-air, music notes | A batch had a match (2 s) |
+| 😤 **Irritated** | Still flying, 💢 | Energy 25–50% (it keeps searching) |
+| 💧 **Water break** | Riverbank, with a countdown | At 90, 80, 70 … 30% energy (5 s, +4%) |
+| ⚡ **Energy drink** | Riverbank, with a countdown | At 25% energy (15 s, back to 75%) |
+| 😴 **Sleeping** | Night, tree branch | Stopped (energy resets to 100%) |
 
-```bash
-npm run server          # http://127.0.0.1:8787
-```
+Energy drains **1% per second** while searching, and a match adds **+2%**. Scanning pauses during breaks. Every move
+between scenes is animated: take-off, landing, and flying down to the river.
 
-The server has no authentication yet and only listens on `127.0.0.1`. Add auth before deploying it anywhere.
+---
 
-## Scripts
+## 🔑 Paying for the AI
+
+| | Your own API key | 🪙 Koo credits |
+|---|---|---|
+| **You need** | An OpenAI, Google Gemini or Anthropic key | A Google account and UPI |
+| **Set up in** | ⚙️ Search settings → Provider | ⚙️ Provider = Koo credits, then 🪙 Sign in |
+| **Your key goes to** | Only that provider (stored on your computer, unencrypted) | Not needed; OpenBroker's key is used |
+| **Cost** | Billed by your provider | ₹100 → 50 🪙 · ₹200 → 100 🪙 · ₹500 → 250 🪙 (1 🪙 = ₹1 of AI usage) |
+
+> **Local mode:** while no central OpenBroker API is deployed, Koo credits use a local one at `localhost:8787`, with
+> no sign-in and no credits. See **Running the cloud API → Local mode** below.
+
+---
+
+## 🛠️ Development
+
+> Requires Node.js 22+ and Google Chrome.
 
 | Command | What it does |
 |---|---|
-| `npm run dev` | Dev build with live reload → `output/chrome-mv3-dev` |
-| `npm run build` | Production build → `output/chrome-mv3` (commit it after changes) |
-| `npm test` | Unit tests (`lib/*.test.ts`, Node's built-in test runner) |
-| `npm run server` | OpenBroker LLM proxy server |
+| `npm install` | Install dependencies |
+| `npm run build` | Production build → `output/chrome-mv3` **(commit it after changes, so downloads stay current)** |
+| `npm run dev` | Live-reload build → load `output/chrome-mv3-dev` (needs the dev server running; not committed) |
+| `npm test` | Unit tests for `lib/` and `cloud/` (Node's built-in runner) |
+| `npm run cloud:dev` | Run the cloud API locally (Wrangler) |
+| `npm run cloud:deploy` | Deploy the cloud API to Cloudflare |
+| `npm run cloud:db` | Create the D1 tables (remote) |
 
-## Project structure
+| Path | What's in it |
+|---|---|
+| `entrypoints/content.ts` | Facebook scanner: scroll, read, dedupe, batch, energy & breaks. **Page selectors are in `SEL` at the top** |
+| `entrypoints/background.ts` | Receives batches, calls the AI (your key or the cloud API), stores decisions |
+| `entrypoints/sidepanel/` | Panel UI (React) and Koo (`koo.tsx`) |
+| `lib/classify.ts` | Prompt, AI provider calls, post IDs, text cleanup, phone numbers & country codes |
+| `lib/energy.ts` · `sort.ts` · `csv.ts` | Koo's energy model · match ordering · CSV export |
+| `cloud/worker.ts` | Cloud API: sign-in, credits, UPI checkout, webhook, paid AI calls |
+| `cloud/billing.ts` · `schema.sql` | Packs, cost, webhook signature, exactly-once crediting (tested) · D1 tables |
+| `wxt.config.ts` | Manifest and build config (the fixed extension `key` lives here) |
+
+Chrome 137+ no longer lets tools auto-load extensions, so loading is always manual. Icons are in `public/icon/`.
+
+---
+
+## ☁️ Running the cloud API (operators)
+
+<details>
+<summary><b>How Koo credits work</b> (Cloudflare Worker + D1, Razorpay UPI, Google sign-in)</summary>
+
+<br>
 
 ```text
-entrypoints/
-  content.ts        Facebook scanner: scroll, read, dedupe, batch, energy & breaks
-  background.ts     Receives batches, calls the LLM, stores decisions
-  sidepanel/        Side panel UI (React) and Koo, the avatar (koo.tsx)
-lib/
-  classify.ts       Prompt, provider calls, post IDs, text cleanup, phone numbers
-  energy.ts         Koo's energy model (drain, water / energy-drink breaks)
-  sort.ts, csv.ts   Matches ordering and CSV export
-server/index.ts     Optional LLM proxy that holds the API key
-wxt.config.ts       Extension manifest and build config
+Panel ──sign in (Google)──► /auth      → OpenBroker token (only its hash is stored)
+Panel ──buy ₹200─────────► /checkout  → UPI-only Razorpay Payment Link (user id attached)
+User pays by UPI ────────► Razorpay ──► /razorpay-webhook → signature check → +100 🪙, exactly once
+Scanner ─batch of posts──► /classify  → checks credits → AI with your key → deducts the real token cost
 ```
 
-Facebook page selectors live in `SEL` at the top of `entrypoints/content.ts` — fix those first when Facebook changes
-its layout.
+| Endpoint | Purpose |
+|---|---|
+| `POST /auth` | Google access token → OpenBroker token |
+| `GET /me` | Email and credit balance |
+| `POST /checkout` | UPI-only Razorpay Payment Link for a ₹100 / ₹200 / ₹500 pack |
+| `POST /razorpay-webhook` | Verifies Razorpay's signature and credits the payment exactly once |
+| `POST /classify` | Refuses at 0 credits; failed AI calls cost nothing |
 
-## Notes
+Users get credits worth half of what they pay. Razorpay takes about 2% + GST per payment (check their pricing page)
+out of your half.
 
-- Automated browsing is against Facebook's terms; the agent only reads, runs only when you start it, in a tab you can
-  see, at a human-like pace. Use it on your own account at your own risk.
-- Messaging (WhatsApp / Facebook DMs) is not automated; contacts are collected for you to reach out yourself.
+</details>
+
+<details>
+<summary><b>One-time setup</b></summary>
+
+<br>
+
+| # | Where | What |
+|:-:|---|---|
+| 1 | **Cloudflare** | `npx wrangler login` → `npx wrangler d1 create openbroker` → paste `database_id` into `cloud/wrangler.toml` → `npm run cloud:db` |
+| 2 | **Prices** | In `cloud/wrangler.toml` set `LLM_PROVIDER`, `LLM_MODEL`, `PRICE_INPUT_INR_PER_1M`, `PRICE_OUTPUT_INR_PER_1M` (calls are refused while prices are 0) |
+| 3 | **Secrets** | `npx wrangler secret put <NAME> --config cloud/wrangler.toml` for `LLM_API_KEY`, `RZP_KEY_ID`, `RZP_KEY_SECRET`, `RZP_WEBHOOK_SECRET` |
+| 4 | **Deploy** | `npm run cloud:deploy` → note `https://openbroker.<you>.workers.dev` |
+| 5 | **Razorpay** | Webhook `https://<worker>/razorpay-webhook`, event **`payment_link.paid`**, same secret as `RZP_WEBHOOK_SECRET` (test keys first) |
+| 6 | **Google** | OAuth client of type **Chrome Extension**, item ID **`ickjoonhepcjfhdiopbckhgalfdgijbj`** |
+| 7 | **Build** | `.env` with `WXT_API_URL=…` and `WXT_GOOGLE_CLIENT_ID=…` → `npm run build` → commit `output/chrome-mv3/` |
+| 8 | **AI balance** | Turn on auto-recharge in your AI provider's billing settings |
+
+</details>
+
+<details>
+<summary><b>Local mode and local testing</b></summary>
+
+<br>
+
+Built without `WXT_API_URL`, the extension's Koo credits use `http://localhost:8787` with **no sign-in and no credits**:
+
+```bash
+# cloud/.dev.vars (git-ignored)
+LLM_API_KEY=sk-...   # your own provider key
+DEV_NO_AUTH=1        # honoured only for requests to localhost, never by a deployed worker
+```
+
+Then run `npm run cloud:dev`, choose **🪙 Koo credits** and press Start.
+
+To test the full paid flow locally, add the Razorpay secrets to `cloud/.dev.vars`, create the local tables with
+`npx wrangler d1 execute openbroker --local --file cloud/schema.sql --config cloud/wrangler.toml`, then run `npm run cloud:dev`.
+
+</details>
+
+---
+
+## ⚠️ Good to know
+
+| | |
+|---|---|
+| **Facebook's terms** | Automated browsing is against them. OpenBroker only reads, runs only when you press Start, in a tab you can see, at a human pace. Use it on your own account at your own risk |
+| **Messaging** | Not automated. Contacts are collected so you can reach out yourself |
+| **Facebook changes** | If posts stop being found, the selectors in `SEL` (`entrypoints/content.ts`) need updating |

@@ -78,18 +78,21 @@ The extension is already built in **`output/chrome-mv3/`**. You only need Google
 
 ## 🐦 Meet Koo
 
-Koo is the explorer bird who shows what the agent is doing, and how tired it's getting.
+<table>
+  <tr>
+    <td width="180"><img src=".github/readme/koo/hero.png" width="170" alt="Koo, a blue explorer bird with aviator goggles and a house-emblem backpack"></td>
+    <td>Koo is the explorer bird who shows what the agent is doing, and how tired it's getting. Goggles for exploring,
+    and a backpack with a little house for the home it's finding you.</td>
+  </tr>
+</table>
 
-<p align="center"><img src=".github/readme/koo-states.jpg" width="900" alt="Koo character sheet: searching, dancing, sleeping, irritated, drinking water"></p>
-
-| State | Scene | When |
-|---|---|---|
-| ✈️ **Searching** | Flying over the city | Reading posts |
-| 🎉 **Dancing** | Mid-air, music notes | A batch had a match (2 s) |
-| 😤 **Irritated** | Still flying, 💢 | Energy 25–50% (it keeps searching) |
-| 💧 **Water break** | Riverbank, with a countdown | At 90, 80, 70 … 30% energy (5 s, +4%) |
-| ⚡ **Energy drink** | Riverbank, with a countdown | At 25% energy (15 s, back to 75%) |
-| 😴 **Sleeping** | Night, tree branch | Stopped (energy resets to 100%) |
+| | State | Scene | When |
+|:-:|---|---|---|
+| <img src=".github/readme/koo/searching.png" width="120" alt="Koo flying"> | ✈️ **Searching** | Flying over the city | Reading posts |
+| <img src=".github/readme/koo/dancing.png" width="120" alt="Koo dancing with a music note"> | 🎉 **Dancing** | Mid-air, music notes | A batch had a match (2 s) |
+| <img src=".github/readme/koo/irritated.png" width="120" alt="Koo looking irritated"> | 😤 **Irritated** | Still flying, 💢 | Energy 25–50% (it keeps searching) |
+| <img src=".github/readme/koo/drinking.png" width="120" alt="Koo drinking from a water bottle"> | 💧 **Water break** · ⚡ **Energy drink** | Riverbank, with a countdown | Water at 90, 80 … 30% energy (5 s, +4%) · energy drink at 25% (15 s, back to 75%) |
+| <img src=".github/readme/koo/sleeping.png" width="120" alt="Koo sleeping on its backpack"> | 😴 **Sleeping** | Night, tree branch | Stopped (energy resets to 100%) |
 
 Energy drains **1% per second** while searching, and a match adds **+2%**. Scanning pauses during breaks. Every move
 between scenes is animated: take-off, landing, and flying down to the river.

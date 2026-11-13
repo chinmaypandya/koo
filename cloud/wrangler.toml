@@ -1,0 +1,19 @@
+# OpenBroker cloud API. Setup steps are in README.md ("Koo credits: the cloud API").
+name = "openbroker"
+main = "worker.ts"
+compatibility_date = "2026-06-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "openbroker"
+database_id = "REPLACE_WITH_ID_FROM_wrangler_d1_create"
+
+[vars]
+LLM_PROVIDER = "openai"         # openai | gemini | anthropic
+LLM_MODEL = ""                  # empty = provider default (lib/classify.ts)
+# Your model's price in ₹ per 1M tokens — set these from your provider's pricing page. Calls are refused until set.
+PRICE_INPUT_INR_PER_1M = "0"
+PRICE_OUTPUT_INR_PER_1M = "0"
+
+# Secrets (never in this file):  npx wrangler secret put <NAME> --config cloud/wrangler.toml
+#   LLM_API_KEY, RZP_KEY_ID, RZP_KEY_SECRET, RZP_WEBHOOK_SECRET

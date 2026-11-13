@@ -6,9 +6,11 @@
   "scripts": {
     "dev": "wxt",
     "build": "wxt build",
-    "test": "node --test lib/",
-    "server": "node --env-file=server/.env server/index.ts",
-    "postinstall": "wxt prepare"
+    "test": "node --test lib/ cloud/",
+    "postinstall": "wxt prepare",
+    "cloud:dev": "wrangler dev --config cloud/wrangler.toml",
+    "cloud:deploy": "wrangler deploy --config cloud/wrangler.toml",
+    "cloud:db": "wrangler d1 execute openbroker --remote --file cloud/schema.sql --config cloud/wrangler.toml"
   },
   "dependencies": {
     "react": "^19.3.1",
@@ -20,6 +22,10 @@
     "@types/react-dom": "^19.3.0",
     "@wxt-dev/module-react": "^1.2.2",
     "typescript": "^7.0.2",
+    "wrangler": "^4.162.0",
     "wxt": "^0.21.5"
+  },
+  "allowScripts": {
+    "workerd@1.20261113.1": true
   }
 }

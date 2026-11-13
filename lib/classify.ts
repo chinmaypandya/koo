@@ -91,19 +91,19 @@ export function parseResults(text: string): Result[] {
   return r;
 }
 
+// LLM providers called with an API key: the user's own (from the extension) or ours (from the cloud worker).
 // Gemini exposes an OpenAI-compatible endpoint, so only Anthropic needs its own request shape.
-// "openbroker" = our server, which holds the LLM key (users bring no key).
 export const PROVIDERS = {
-  // shortcut: localhost URL; change to the deployed server URL (and add it to host_permissions) when hosting it.
-  openbroker: { url: 'http://localhost:8787/classify', model: '' },
   anthropic: { url: 'https://api.anthropic.com/v1/messages', model: 'claude-haiku-5-5' },
   openai: { url: 'https://api.openai.com/v1/chat/completions', model: 'gpt-5-mini' },
   gemini: { url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', model: 'gemini-2.5-flash' },
 };
 export type Provider = keyof typeof PROVIDERS;
+// What the user picks in the panel: their own key with a provider, or "openbroker" = Koo credits via our cloud API.
+export type Choice = Provider | 'openbroker';
 
-// Default guess only; the user picks the provider in the side panel.
-export const providerOf = (key: string): Provider =>
+// Default guess only; the user picks in the side panel.
+export const providerOf = (key: string): Choice =>
   !key ? 'openbroker' : key.startsWith('sk-ant-') ? 'anthropic' : key.startsWith('AIza') ? 'gemini' : 'openai';
 
 // `usage`, if given, is filled with the call's token counts so the caller can charge the real cost.
@@ -114,14 +114,6 @@ export async function classify(
   const { url, model: defaultModel } = PROVIDERS[provider];
   const slim = posts.map(({ id, text }) => ({ id, text }));
   const group = posts[0]?.group || undefined; // one group per batch; its name usually says the city
-
-  if (provider === 'openbroker') {
-    const res = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ filters, group, prompt, posts: slim }) })
-      .catch(() => { throw new Error(`Cannot reach the OpenBroker server at ${url}. Is it running (npm run server)?`); });
-    const body = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(body.error?.message ?? `OpenBroker server error ${res.status}`);
-    return body;
-  }
   const user = JSON.stringify({ filters, group, posts: slim });
   const common = { model: model || defaultModel };
 

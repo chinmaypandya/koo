@@ -17,7 +17,8 @@ taking water and energy-drink breaks, and sleeping on a branch when stopped.
   location and contact numbers (with country code).
 - **Matches list** — cart-style items, multi-column ordering (rent / deposit / amenities) and **CSV export**
   (all, or only new since the last export).
-- **Bring your own key** (OpenAI, Gemini or Anthropic) **or** use the OpenBroker server, which keeps the key server-side.
+- **Two ways to pay for the AI:** bring your own key (OpenAI, Gemini or Anthropic), **or** sign in with Google and use
+  **Koo credits** bought over UPI (no key needed).
 - **Activity log** — every step the agent takes, for checking what it did.
 
 ## Use it yourself (no coding or building needed)
@@ -34,7 +35,9 @@ The ready-to-run extension is already built and committed in `output/chrome-mv3/
    Select that exact folder: it's the one that contains `manifest.json`.
 5. **Pin it.** Click the puzzle-piece icon in Chrome's toolbar and pin **OpenBroker** so Koo's icon is always visible.
 6. **Set it up.** Click the icon to open the side panel, then **⚙️ Search settings**:
-   - Pick an AI provider and paste your API key (OpenAI, Google Gemini or Anthropic). The key stays on your computer.
+   - Choose how the AI is paid for:
+     - **Your own API key** (OpenAI, Google Gemini or Anthropic): paste it; it stays on your computer.
+     - **🪙 Koo credits**: no key. Open **🪙 Koo credits**, sign in with Google and buy credits by UPI.
    - Fill in what you're looking for: target location and max distance, budget, size, amenities, your gender.
 7. **Run it.** Open a Facebook flat-rental group (you must be logged in to Facebook), then press **Start**.
    Koo takes off and starts reading posts; matches appear under **🏆 Matches**, with contact numbers, and can be
@@ -48,7 +51,7 @@ including your API key.
 
 ## Development
 
-Requirements: Node.js 22+ (the server and tests run TypeScript directly with Node's type stripping) and Google Chrome.
+Requirements: Node.js 22+ (tests run TypeScript directly with Node's type stripping) and Google Chrome.
 
 ```bash
 npm install
@@ -64,30 +67,60 @@ extensions, so loading is always manual. The extension icons are generated into 
 
 ## Choosing an AI provider
 
-In the side panel, open **Search settings**:
+In the side panel, open **Search settings → Provider**:
 
 - **OpenAI / Gemini / Anthropic (your key)** — paste your API key; it is stored unencrypted in the extension's local
-  storage on your machine only. The model field is optional.
-- **OpenBroker server (no key needed)** — run the server below; the extension never sees the key.
+  storage on your machine only and sent only to that provider. The model field is optional.
+- **🪙 Koo credits (no API key needed)** — sign in with Google under **🪙 Koo credits** and buy credits by UPI.
+  AI calls go through the OpenBroker cloud API, which uses its own key and charges your credits.
 
-### Running the OpenBroker server
+The **AI instructions** box in Search settings changes the matching rules for either option.
 
-Create `server/.env` (git-ignored):
+## Koo credits: the cloud API (for the operator)
 
-```bash
-LLM_PROVIDER=openai     # openai | gemini | anthropic
-LLM_API_KEY=sk-...      # required
-LLM_MODEL=              # optional; provider default if empty
-PORT=8787               # optional
-```
+`cloud/` is a Cloudflare Worker + D1 database. Users sign in with Google and get an OpenBroker token; payments arrive
+as Razorpay UPI Payment Links; a signed Razorpay webhook adds credits automatically; every AI call deducts its real
+cost from that user only. **1 Koo credit = ₹1 of AI usage, and users get credits worth half of what they pay.**
 
-Then:
+| Endpoint | Purpose |
+|---|---|
+| `POST /auth` | Google access token → OpenBroker token (only its SHA-256 hash is stored) |
+| `GET /me` | Email and credit balance |
+| `POST /checkout` | Creates a UPI-only Razorpay Payment Link for a ₹100 / ₹200 / ₹500 pack |
+| `POST /razorpay-webhook` | Verifies Razorpay's signature, credits the payment exactly once |
+| `POST /classify` | Checks credits, calls the AI with your key, deducts the real token cost |
 
-```bash
-npm run server          # http://127.0.0.1:8787
-```
+**One-time setup:**
 
-The server has no authentication yet and only listens on `127.0.0.1`. Add auth before deploying it anywhere.
+1. **Cloudflare:** `npx wrangler login`, then `npx wrangler d1 create openbroker` and paste the printed `database_id`
+   into `cloud/wrangler.toml`. Create the tables: `npm run cloud:db`.
+2. **Prices and key:** in `cloud/wrangler.toml` set `LLM_PROVIDER`, `LLM_MODEL` and your model's price
+   (`PRICE_INPUT_INR_PER_1M`, `PRICE_OUTPUT_INR_PER_1M`, ₹ per million tokens; AI calls are refused while they're 0).
+   Then add secrets (never put them in files):
+   ```bash
+   npx wrangler secret put LLM_API_KEY --config cloud/wrangler.toml
+   npx wrangler secret put RZP_KEY_ID --config cloud/wrangler.toml
+   npx wrangler secret put RZP_KEY_SECRET --config cloud/wrangler.toml
+   npx wrangler secret put RZP_WEBHOOK_SECRET --config cloud/wrangler.toml
+   ```
+3. **Deploy:** `npm run cloud:deploy` → note the URL, e.g. `https://openbroker.<you>.workers.dev`.
+4. **Razorpay** (KYC done): Dashboard → Webhooks → add `https://<your-worker>/razorpay-webhook`, event
+   **`payment_link.paid`**, with the same secret as `RZP_WEBHOOK_SECRET`. Use test keys first, then live keys.
+5. **Google sign-in:** Google Cloud Console → Credentials → OAuth client ID → type **Chrome Extension**, item ID
+   **`ickjoonhepcjfhdiopbckhgalfdgijbj`** (fixed by the `key` in `wxt.config.ts`, so every unpacked install has it).
+6. **Build the extension against it:** create `.env` in the project root (git-ignored):
+   ```bash
+   WXT_API_URL=https://openbroker.<you>.workers.dev
+   WXT_GOOGLE_CLIENT_ID=<client id>.apps.googleusercontent.com
+   ```
+   then `npm run build` and commit `output/chrome-mv3/`.
+7. **Keep your AI balance funded:** enable auto-recharge in your AI provider's billing settings.
+
+Local testing: put the same secrets in `cloud/.dev.vars` (git-ignored), run
+`npx wrangler d1 execute openbroker --local --file cloud/schema.sql --config cloud/wrangler.toml`, then `npm run cloud:dev`
+(serves on `http://localhost:8787`, which is the extension's default API URL).
+
+Razorpay charges about 2% + GST per successful payment (check their pricing page); that comes out of your half.
 
 ## Scripts
 
@@ -95,8 +128,10 @@ The server has no authentication yet and only listens on `127.0.0.1`. Add auth b
 |---|---|
 | `npm run dev` | Dev build with live reload → `output/chrome-mv3-dev` |
 | `npm run build` | Production build → `output/chrome-mv3` (commit it after changes) |
-| `npm test` | Unit tests (`lib/*.test.ts`, Node's built-in test runner) |
-| `npm run server` | OpenBroker LLM proxy server |
+| `npm test` | Unit tests (`lib/` and `cloud/`, Node's built-in test runner) |
+| `npm run cloud:dev` | Run the cloud API locally (Wrangler) |
+| `npm run cloud:deploy` | Deploy the cloud API to Cloudflare |
+| `npm run cloud:db` | Create the D1 tables (remote) |
 
 ## Project structure
 
@@ -109,7 +144,10 @@ lib/
   classify.ts       Prompt, provider calls, post IDs, text cleanup, phone numbers
   energy.ts         Koo's energy model (drain, water / energy-drink breaks)
   sort.ts, csv.ts   Matches ordering and CSV export
-server/index.ts     Optional LLM proxy that holds the API key
+cloud/
+  worker.ts         Cloud API: sign-in, credits, UPI checkout, webhook, paid AI calls
+  billing.ts        Credit packs, cost, webhook signature, exactly-once crediting (tested)
+  schema.sql        D1 tables: users, tokens, payments, usage
 wxt.config.ts       Extension manifest and build config
 ```
 

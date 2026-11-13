@@ -1,4 +1,22 @@
-import { classify, phones, providerOf, toIntl, type Filters, type Post, type Provider } from '@/lib/classify';
+import { classify, phones, providerOf, toIntl, type Choice, type Filters, type Post, type Result } from '@/lib/classify';
+
+import { API } from '@/lib/api';
+
+// Koo credits mode: the cloud API calls the AI with our key and charges this user's credits.
+async function cloudClassify(posts: Post[], filters: Filters | undefined, prompt: string | undefined): Promise<Result[]> {
+  const { token } = (await browser.storage.local.get('token')) as { token?: string };
+  if (!token) throw new Error('Sign in under 🪙 Koo credits, or choose your own API key in Search settings.');
+  const res = await fetch(`${API}/classify`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+    body: JSON.stringify({ filters, prompt, group: posts[0]?.group, posts: posts.map(({ id, text }) => ({ id, text })) }),
+  }).catch(() => { throw new Error(`Cannot reach OpenBroker at ${API}.`); });
+  const body = await res.json().catch(() => ({}));
+  if (res.status === 401) await browser.storage.local.remove(['token', 'email', 'credits']); // token revoked → sign in again
+  if (typeof body.credits === 'number') await browser.storage.local.set({ credits: body.credits });
+  if (!res.ok) throw new Error(body.error?.message ?? `OpenBroker error ${res.status}`);
+  return body.results;
+}
 
 export default defineBackground(() => {
   browser.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
@@ -14,13 +32,14 @@ let saving = Promise.resolve();
 
 async function handle(posts: Post[]) {
   const { apiKey, provider, model, filters, prompt } = (await browser.storage.local.get(['apiKey', 'provider', 'model', 'filters', 'prompt'])) as {
-    apiKey?: string; provider?: Provider; model?: string; filters?: Filters; prompt?: string;
+    apiKey?: string; provider?: Choice; model?: string; filters?: Filters; prompt?: string;
   };
   const p = provider ?? providerOf(apiKey ?? '');
-  if (p !== 'openbroker' && !apiKey) throw new Error('Add your API key in the side panel, or pick the OpenBroker provider.');
+  if (p !== 'openbroker' && !apiKey) throw new Error('Add your API key in Search settings, or choose Koo credits.');
   const byId = new Map(posts.map((post) => [post.id, post]));
   // Keep every verdict (match or not) so the side panel can show the AI's reasoning.
-  const verdicts = (await classify(posts, filters, apiKey ?? '', p, model, prompt))
+  const results = p === 'openbroker' ? await cloudClassify(posts, filters, prompt) : await classify(posts, filters, apiKey!, p, model, prompt);
+  const verdicts = results
     .filter((r) => byId.has(r.id))
     .map((r) => {
       const { text, ...post } = byId.get(r.id)!;

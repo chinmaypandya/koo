@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { DEFAULT_PROMPT, MAX_PROMPT, PROVIDERS, phones, providerOf, type Choice } from '@/lib/classify';
 import { API, LOCAL } from '@/lib/api';
-import { PACKS, creditsFor } from '@/cloud/billing';
+import { PACKS, REQUESTS_PER_CREDIT, SIGNUP_BONUS, creditsFor } from '@/cloud/billing';
 import { sortResults, type Sort, type SortKey } from '@/lib/sort';
 import { toCsv } from '@/lib/csv';
 import { KooStage, STATES, stateOf } from './koo';
@@ -244,7 +244,7 @@ function Credits({ s }: { s: Record<string, any> }) {
   if (!s.token)
     return (
       <>
-        <p>Sign in to use Koo credits: Koo uses Koo's AI, so you don't need your own API key.</p>
+        <p>Sign in to use Koo credits: no API key needed. New accounts get {SIGNUP_BONUS} free credit ({REQUESTS_PER_CREDIT} AI requests).</p>
         <button className="danger-free" onClick={signIn}>Sign in with Google</button>
         {msg && <p className="muted">{msg}</p>}
       </>
@@ -252,8 +252,9 @@ function Credits({ s }: { s: Record<string, any> }) {
   return (
     <>
       <p className="muted">{s.email}</p>
-      <p className="balance">🪙 {Number(s.credits ?? 0).toFixed(2)} <small>Koo credits</small></p>
-      <p className="muted">1 Koo credit = ₹1. Minimum top-up ₹100. Each AI batch uses a fraction of a credit.</p>
+      <p className="balance">🪙 {Number(s.credits ?? 0).toFixed(1)} <small>Koo credits</small></p>
+      <p className="muted">≈ {Math.floor(Number(s.credits ?? 0) * REQUESTS_PER_CREDIT)} AI requests left (5 posts each).</p>
+      <p className="muted">1 Koo credit = ₹1 = {REQUESTS_PER_CREDIT} AI requests. Minimum top-up ₹100.</p>
       <div className="exportbar">
         {PACKS.map((r) => <button key={r} onClick={() => buy(r)}>₹{r} → {creditsFor(r)} 🪙</button>)}
       </div>
@@ -283,11 +284,6 @@ function Settings({ s }: { s: Record<string, any> }) {
         </select>
       </label>
       <PromptEditor prompt={s.prompt} />
-      <label>
-        Posts per AI batch <small>(sent early if no full batch within 30s)</small>
-        <input type="number" min={1} max={20} defaultValue={s.batchSize ?? 5}
-          onChange={(e) => browser.storage.local.set({ batchSize: Number(e.target.value) })} />
-      </label>
       <label>
         Provider
         <select value={provider} onChange={(e) => browser.storage.local.set({ provider: e.target.value })}>

@@ -1,4 +1,5 @@
 import { cleanText, longestLine, postId, type Post } from '@/lib/classify';
+import { BATCH_SIZE as BATCH } from '@/cloud/billing';
 import { ENERGY, addMatches, afterBreak, fullEnergy, isIrritated, tick, type Break } from '@/lib/energy';
 
 // All FB selectors live here — fix these first when Facebook changes its DOM.
@@ -88,8 +89,6 @@ export default defineContentScript({
     async function run() {
       lines = [];
       if (!location.pathname.startsWith('/groups/')) return status('Open a Facebook group first.'), true;
-      const { batchSize } = (await browser.storage.local.get('batchSize')) as { batchSize?: number };
-      const BATCH = Math.min(20, Math.max(1, Number(batchSize) || 5)); // server accepts at most 20
       let energy = fullEnergy(Date.now()), onBreak: Break = null;
       // Break kinds map to Koo's states: water → drinking, energy → energy (an unknown name would fall back to sleeping).
       const breakState = (b: Break) => (b === 'water' ? 'drinking' : b);

@@ -20,7 +20,7 @@
 |---|---|
 | 📜 **Reads posts for you** | Scrolls the group at a human pace, expands "See more", strips Facebook's hidden junk text |
 | 🔁 **Never twice** | Remembers posts it has read (30 days), so later runs only see new ones |
-| 🤖 **AI judges each flat** | Budget, size range, location & distance, amenities, gender, all in one AI call per batch |
+| 🤖 **AI judges each flat** | Budget, size range, location & distance, amenities, gender, in one AI request per 5 posts |
 | 🏆 **Matches with contacts** | Rent, deposit, BHK, distance, society, phone numbers with country code |
 | ↕️ **Sort & export** | Order by rent, deposit, amenities (multi-column); export all or only new to Excel (CSV) |
 | 🔑 **Your key or credits** | Use your own OpenAI / Gemini / Anthropic key, **or** 🪙 Koo credits paid by UPI |
@@ -57,7 +57,7 @@ The extension is already built in **`output/chrome-mv3/`**. You only need Google
 
 | Button | Opens |
 |:-:|---|
-| ⚙️ | **Search settings**: location & max distance, budget, size, amenities, gender, batch size, AI provider, AI instructions |
+| ⚙️ | **Search settings**: location & max distance, budget, size, amenities, gender, AI provider, AI instructions |
 | 📜 | **Activity log**: every step the agent took |
 | 🪙 | **Koo credits**: sign in, balance, buy packs by UPI |
 | 🏆 | **Matches**: sort chips, CSV export, cart-style items with rent on the right and contacts at the bottom |
@@ -106,7 +106,8 @@ between scenes is animated: take-off, landing, and flying down to the river.
 | **You need** | An OpenAI, Google Gemini or Anthropic key | A Google account and UPI |
 | **Set up in** | ⚙️ Search settings → Provider | ⚙️ Provider = Koo credits, then 🪙 Sign in |
 | **Your key goes to** | Only that provider (stored on your computer, unencrypted) | Not needed; Koo's key is used |
-| **Cost** | Billed by your provider | **1 🪙 = ₹1.** Packs: ₹100 → 100 🪙 · ₹200 → 200 🪙 · ₹500 → 500 🪙 (minimum ₹100) |
+| **Cost** | Billed by your provider | **1 🪙 = ₹1 = 5 AI requests** (5 posts each). Packs: ₹100 → 100 🪙 · ₹200 → 200 🪙 · ₹500 → 500 🪙 |
+| **Free to try** | — | **1 🪙 free** on sign-up (5 requests = 25 posts) |
 
 > **Local mode:** while no central Koo API is deployed, Koo credits use a local one at `localhost:8787`, with
 > no sign-in and no credits. See **Running the cloud API → Local mode** below.
@@ -153,19 +154,20 @@ Chrome 137+ no longer lets tools auto-load extensions, so loading is always manu
 Panel ──sign in (Google)──► /auth      → Koo token (only its hash is stored)
 Panel ──buy ₹200─────────► /checkout  → UPI-only Razorpay Payment Link (user id attached)
 User pays by UPI ────────► Razorpay ──► /razorpay-webhook → signature check → +100 🪙, exactly once
-Scanner ─batch of posts──► /classify  → checks credits → AI with your key → deducts the real token cost
+Scanner ─5 posts────────► /classify  → checks credits → AI with your key → charges 0.2 🪙 (1 request)
 ```
 
 | Endpoint | Purpose |
 |---|---|
-| `POST /auth` | Google access token → Koo token |
+| `POST /auth` | Google access token → Koo token; a new account starts with 1 free 🪙 |
 | `GET /me` | Email and credit balance |
 | `POST /checkout` | UPI-only Razorpay Payment Link for a ₹100 / ₹200 / ₹500 pack |
 | `POST /razorpay-webhook` | Verifies Razorpay's signature and credits the payment exactly once |
-| `POST /classify` | Refuses at 0 credits; failed AI calls cost nothing |
+| `POST /classify` | Up to 5 posts; charges 0.2 🪙; refuses below 0.2 🪙; failed AI calls cost nothing |
 
-1 credit = ₹1 paid, minimum top-up ₹100. Each AI call is charged at **2× the provider's real cost** (`MARKUP` in
-`cloud/billing.ts`), which is your margin. Razorpay takes about 2% + GST per payment (check their pricing page) out of it.
+**Pricing** (all in `cloud/billing.ts`): 1 credit = ₹1 paid = 5 AI requests; a request is one batch of 5 posts
+(0.2 credits); minimum top-up ₹100; new accounts get 1 free credit. The API rejects requests with more than 5 posts.
+Your margin is ₹0.20 per request minus the AI provider's cost for 5 posts; Razorpay takes about 2% + GST per payment.
 
 </details>
 
@@ -177,7 +179,7 @@ Scanner ─batch of posts──► /classify  → checks credits → AI with you
 | # | Where | What |
 |:-:|---|---|
 | 1 | **Cloudflare** | `npx wrangler login` → `npx wrangler d1 create koo` → paste `database_id` into `cloud/wrangler.toml` → `npm run cloud:db` |
-| 2 | **Prices** | In `cloud/wrangler.toml` set `LLM_PROVIDER`, `LLM_MODEL`, `PRICE_INPUT_INR_PER_1M`, `PRICE_OUTPUT_INR_PER_1M` (calls are refused while prices are 0) |
+| 2 | **Model** | In `cloud/wrangler.toml` set `LLM_PROVIDER` and `LLM_MODEL` (pricing is in `cloud/billing.ts`) |
 | 3 | **Secrets** | `npx wrangler secret put <NAME> --config cloud/wrangler.toml` for `LLM_API_KEY`, `RZP_KEY_ID`, `RZP_KEY_SECRET`, `RZP_WEBHOOK_SECRET` |
 | 4 | **Deploy** | `npm run cloud:deploy` → note `https://koo.<you>.workers.dev` |
 | 5 | **Razorpay** | Webhook `https://<worker>/razorpay-webhook`, event **`payment_link.paid`**, same secret as `RZP_WEBHOOK_SECRET` (test keys first) |

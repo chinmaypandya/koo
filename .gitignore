@@ -1,7 +1,9 @@
 # Dependencies and build output
 node_modules/
-output/
 .wxt/
+# The production build IS committed so people can load it without building; the dev build needs a dev server, so not.
+output/*
+!output/chrome-mv3/
 *.log
 
 # Secrets: real and example env files (variables are documented in README.md)

@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { PROVIDERS, phones, providerOf, type Provider } from '@/lib/classify';
+import { DEFAULT_PROMPT, MAX_PROMPT, PROVIDERS, phones, providerOf, type Provider } from '@/lib/classify';
 import { sortResults, type Sort, type SortKey } from '@/lib/sort';
 import { toCsv } from '@/lib/csv';
 import { KooStage, STATES, stateOf } from './koo';
@@ -154,6 +154,22 @@ function BreakTimer({ kind, until }: { kind: string; until: number }) {
   );
 }
 
+// The AI's matching rules, editable. Empty or unchanged = default. The JSON output format is always added after it.
+function PromptEditor({ prompt }: { prompt?: string }) {
+  const [text, setText] = useState(prompt || DEFAULT_PROMPT);
+  const save = (v: string) => {
+    setText(v);
+    v.trim() && v !== DEFAULT_PROMPT ? browser.storage.local.set({ prompt: v }) : browser.storage.local.remove('prompt');
+  };
+  return (
+    <label>
+      AI instructions <small>({prompt ? 'customised' : 'default'}; the reply format is added automatically)</small>
+      <textarea rows={8} maxLength={MAX_PROMPT} value={text} onChange={(e) => save(e.target.value)} />
+      {prompt && <button type="button" className="reset" onClick={() => save(DEFAULT_PROMPT)}>Reset to default</button>}
+    </label>
+  );
+}
+
 function Settings({ s }: { s: Record<string, any> }) {
   const filters = s.filters ?? {};
   const provider: Provider = s.provider ?? providerOf(s.apiKey ?? '');
@@ -173,6 +189,7 @@ function Settings({ s }: { s: Record<string, any> }) {
           <option value="female">Female</option>
         </select>
       </label>
+      <PromptEditor prompt={s.prompt} />
       <label>
         Posts per AI batch <small>(sent early if no full batch within 30s)</small>
         <input type="number" min={1} max={20} defaultValue={s.batchSize ?? 5}

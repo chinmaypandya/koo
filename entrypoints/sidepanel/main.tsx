@@ -237,8 +237,8 @@ function Credits({ s }: { s: Record<string, any> }) {
     return (
       <>
         <p><b>Local mode.</b> No central Koo API is set up yet, so Koo credits use your local one at <code>{API}</code>:
-          no sign-in and no credits; it uses the API key in <code>cloud/.dev.vars</code>.</p>
-        <p className="muted">Start it with <code>npm run cloud:dev</code> (with <code>DEV_NO_AUTH=1</code> in <code>cloud/.dev.vars</code>).
+          no sign-in and no credits; it calls the AI with the key in <code>server/.env</code>.</p>
+        <p className="muted">Start it with <code>npm run server</code>.
           Once the cloud API is deployed and <code>WXT_API_URL</code> is set at build time, sign-in and UPI packs appear here.</p>
       </>
     );

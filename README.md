@@ -109,8 +109,8 @@ between scenes is animated: take-off, landing, and flying down to the river.
 | **Cost** | Billed by your provider | **1 🪙 = ₹1 = 5 AI requests** (5 posts each). Packs: ₹100 → 100 🪙 · ₹200 → 200 🪙 · ₹500 → 500 🪙 |
 | **Free to try** | — | **5 🪙 free** on sign-up (25 requests = 125 posts) |
 
-> **Local mode:** while no central Koo API is deployed, Koo credits use a local one at `localhost:8787`, with
-> no sign-in and no credits. See **Running the cloud API → Local mode** below.
+> **Local mode:** while no central Koo API is deployed, Koo credits use the **local server** at `localhost:8787`
+> (`npm run server`), with no sign-in and no credits. See **Local server** below.
 
 ---
 
@@ -123,6 +123,7 @@ between scenes is animated: take-off, landing, and flying down to the river.
 | `npm install` | Install dependencies |
 | `npm run build` | Production build → `output/chrome-mv3` **(commit it after changes, so downloads stay current)** |
 | `npm run dev` | Live-reload build → load `output/chrome-mv3-dev` (needs the dev server running; not committed) |
+| `npm run server` | Local server: the AI router Koo credits use when no cloud API is configured |
 | `npm test` | Unit tests for `lib/` (Node's built-in runner); `npm run test:cloud` for the private worker |
 | `npm run cloud:dev` | Run the cloud API locally (Wrangler) |
 | `npm run cloud:deploy` | Deploy the cloud API to Cloudflare |
@@ -135,11 +136,30 @@ between scenes is animated: take-off, landing, and flying down to the river.
 | `entrypoints/sidepanel/` | Panel UI (React) and Koo (`koo.tsx`) |
 | `lib/classify.ts` | Prompt, AI provider calls, post IDs, text cleanup, phone numbers & country codes |
 | `lib/energy.ts` · `sort.ts` · `csv.ts` | Koo's energy model · match ordering · CSV export |
+| `server/` *(local, not in this repo)* | Local server: fallback AI router on `localhost:8787`, key from `server/.env` |
 | `lib/pricing.ts` | Koo credits pricing shared with the worker: packs, 5 requests per credit, batch of 5, sign-up bonus |
 | `cloud/` *(private, not in this repo)* | The paid cloud API worker: sign-in, credits, UPI checkout, webhook, paid AI calls |
 | `wxt.config.ts` | Manifest and build config (the fixed extension `key` lives here) |
 
 Chrome 137+ no longer lets tools auto-load extensions, so loading is always manual. Icons are in `public/icon/`.
+
+---
+
+## 🖥️ Local server (no cloud API needed)
+
+While the extension is built **without** `WXT_API_URL` (the default), **🪙 Koo credits** send their AI requests to a
+local server on your machine, which calls the AI with your key. No sign-in, no credits.
+
+> The local server (`server/`) is kept on the operator's machine and **not included in this repository**. Without it,
+> use **your own API key** in Search settings instead of Koo credits.
+
+| Step | Do this |
+|:-:|---|
+| **1** | Create `server/.env` (git-ignored): `LLM_PROVIDER=openai`, `LLM_API_KEY=sk-...`, optional `LLM_MODEL=`, `PORT=8787` |
+| **2** | Run `npm run server` and leave it running (`http://127.0.0.1:8787`, localhost only) |
+| **3** | In ⚙️ Search settings choose **🪙 Koo credits** and press Start |
+
+When a cloud API is deployed and the extension is built with `WXT_API_URL`, Koo credits use that instead.
 
 ---
 
@@ -192,22 +212,14 @@ Your margin is ₹0.20 per request minus the AI provider's cost for 5 posts; Raz
 </details>
 
 <details>
-<summary><b>Local mode and local testing</b></summary>
+<summary><b>Testing the worker locally</b></summary>
 
 <br>
 
-Built without `WXT_API_URL`, the extension's Koo credits use `http://localhost:8787` with **no sign-in and no credits**:
-
-```bash
-# cloud/.dev.vars (git-ignored)
-LLM_API_KEY=sk-...   # your own provider key
-DEV_NO_AUTH=1        # honoured only for requests to localhost, never by a deployed worker
-```
-
-Then run `npm run cloud:dev`, choose **🪙 Koo credits** and press Start.
-
-To test the full paid flow locally, add the Razorpay secrets to `cloud/.dev.vars`, create the local tables with
-`npx wrangler d1 execute koo --local --file cloud/schema.sql --config cloud/wrangler.toml`, then run `npm run cloud:dev`.
+Put the secrets in `cloud/.dev.vars` (git-ignored), create the local tables with
+`npx wrangler d1 execute koo --local --file cloud/schema.sql --config cloud/wrangler.toml`, then run `npm run cloud:dev`
+(stop the local server first; both use port 8787). `DEV_NO_AUTH=1` in `.dev.vars` lets the worker serve localhost
+requests without sign-in, for quick checks.
 
 </details>
 

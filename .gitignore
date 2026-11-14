@@ -18,6 +18,8 @@ assets/
 
 # Cloud worker (paid Koo credits API) is private: kept locally / deployed to Cloudflare, not published here.
 cloud/
+# Local fallback server (AI router on localhost) is kept on the operator's machine, not published.
+server/
 
 # AI assistant config and memory
 .claude/

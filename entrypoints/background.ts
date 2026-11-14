@@ -11,13 +11,16 @@ async function cloudClassify(posts: Post[], filters: Filters | undefined, prompt
     headers: { 'content-type': 'application/json', ...(token && { authorization: `Bearer ${token}` }) },
     body: JSON.stringify({ filters, prompt, group: posts[0]?.group, posts: posts.map(({ id, text }) => ({ id, text })) }),
   }).catch(() => {
-    throw new Error(LOCAL ? `Cannot reach the local Koo API at ${API}. Start it with: npm run cloud:dev` : `Cannot reach Koo at ${API}.`);
+    throw new Error(LOCAL ? `Cannot reach the local Koo API at ${API}. Start it with: npm run server` : `Cannot reach Koo at ${API}.`);
   });
   const body = await res.json().catch(() => ({}));
   if (res.status === 401) await browser.storage.local.remove(['token', 'email', 'credits']); // token revoked → sign in again
   if (typeof body.credits === 'number') await browser.storage.local.set({ credits: body.credits });
   if (!res.ok) throw new Error(body.error?.message ?? `Koo error ${res.status}`);
-  return body.results;
+  // The worker replies {results}; the old local server replied with a bare array. Anything else is a clear error, not a crash.
+  const results = Array.isArray(body) ? body : body.results;
+  if (!Array.isArray(results)) throw new Error(`Unexpected reply from ${API}: no results. Is the right Koo API running there?`);
+  return results;
 }
 
 export default defineBackground(() => {

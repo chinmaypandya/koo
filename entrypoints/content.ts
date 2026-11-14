@@ -13,7 +13,8 @@ const SEL = {
   author: 'a[href*="/user/"], h2 a[href], h3 a[href], h4 a[href], strong a[href]',
   button: '[role="button"]',
 };
-const MAX_NEW = 50, MAX_SEEN_STREAK = 15, MAX_EMPTY_SCROLLS = 5, MONTH = 30 * 864e5;
+// No cap on new posts: a run ends on Stop, when it catches up with the last run, or when the feed runs dry.
+const MAX_SEEN_STREAK = 15, MAX_EMPTY_SCROLLS = 5, MONTH = 30 * 864e5;
 const BATCH_WAIT = 30_000; // send a partial batch if it hasn't filled up within this time
 const POST_PACE_MS = 1000; // one post per second while scanning
 const LOAD_WAIT = 3000; // max ms to wait for Facebook to fill in posts before scrolling on
@@ -147,7 +148,7 @@ export default defineContentScript({
         if (!due && Date.now() > dancingUntil && base() !== lastBase) mood((lastBase = base()));
       }, 1000);
 
-      while (running && fresh < MAX_NEW && seenStreak < MAX_SEEN_STREAK && emptyScrolls < MAX_EMPTY_SCROLLS) {
+      while (running && seenStreak < MAX_SEEN_STREAK && emptyScrolls < MAX_EMPTY_SCROLLS) {
         if (due) {
           // Water at each 10% mark (90…30), energy drink at 25%. Reading and scrolling pause for the whole break;
           // breakUntil lets the panel show a countdown.
@@ -203,7 +204,7 @@ export default defineContentScript({
               author_url: author?.href.split('?')[0] ?? null, // drop FB tracking params
             });
             if (batch.length >= BATCH) pending.push(flush());
-            if (fresh >= MAX_NEW || seenStreak >= MAX_SEEN_STREAK) break;
+            if (seenStreak >= MAX_SEEN_STREAK) break;
           } finally {
             if (paced) await sleep(Math.max(0, POST_PACE_MS - (Date.now() - t0)));
           }
@@ -228,7 +229,6 @@ export default defineContentScript({
       // Short reason first so it fits the one-line status card; the log keeps the detail.
       const [why, detail] =
         !running ? ['you pressed Stop', '']
-        : fresh >= MAX_NEW ? [`${MAX_NEW}-post limit reached`, `read ${MAX_NEW} new posts, the per-run limit`]
         : seenStreak >= MAX_SEEN_STREAK ? ['caught up with last run', `${MAX_SEEN_STREAK} already-read posts in a row`]
         : ['no new posts found', `nothing new in ${MAX_EMPTY_SCROLLS} scrolls (if "post cards on page" is 0, Facebook's layout changed)`];
       log(`Stopped: ${why}${detail && ` (${detail})`}.`);

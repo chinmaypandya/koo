@@ -5,6 +5,10 @@
 <h1 align="center">Koo</h1>
 
 <p align="center">
+  <img src="https://visitor-badge.laobi.icu/badge?page_id=chinmaypandya.koo&left_text=visitors" alt="Visitor count">
+</p>
+
+<p align="center">
   <b>An AI agent in your browser that hunts for flats in Facebook groups for you.</b><br>
   Open a group, press <b>Start</b>. Koo reads every post and lists only the flats that match your search.
 </p>
@@ -23,7 +27,7 @@
 | 🤖 **AI judges each flat** | Budget, size range, location & distance, amenities, gender, in one AI request per 5 posts |
 | 🏆 **Matches with contacts** | Rent, deposit, BHK, distance, society, phone numbers with country code |
 | ↕️ **Sort & export** | Order by rent, deposit, amenities (multi-column); export all or only new to Excel (CSV) |
-| 🔑 **Your key or credits** | Use your own OpenAI / Gemini / Anthropic key, **or** 🪙 Koo credits paid by UPI |
+| 🔑 **Your key or credits** | Use your own OpenAI / Gemini / Anthropic key, **or** 🪙 Koo credits (UPI packs coming soon) |
 | ✏️ **Your rules** | Edit the AI instructions yourself; the default is built in |
 
 </td>
@@ -34,14 +38,14 @@
 
 ## 🚀 Use it yourself (no coding needed)
 
-The extension is already built in **`output/chrome-mv3/`**. You only need Google Chrome.
+The extension is already built in **`output/v1/chrome-mv3/`**. You only need Google Chrome.
 
 | Step | Do this |
 |:-:|---|
 | **1** | **Download:** on GitHub click **Code → Download ZIP** and unzip it, or `git clone` the repo |
 | **2** | Open **`chrome://extensions`** in the address bar |
 | **3** | Turn on **Developer mode** (top-right switch). It only allows installing from a folder |
-| **4** | Click **Load unpacked** and select the **`output/chrome-mv3`** folder (the one with `manifest.json`) |
+| **4** | Click **Load unpacked** and select the **`output/v1/chrome-mv3`** folder (the one with `manifest.json`) |
 | **5** | Click the 🧩 puzzle icon and **pin Koo** |
 | **6** | Open the panel and go to **⚙️ Search settings**: choose how the AI is paid for and fill in what you want |
 | **7** | Open a Facebook flat-rental group (logged in) and press **Start**. Matches appear under **🏆** |
@@ -59,7 +63,7 @@ The extension is already built in **`output/chrome-mv3/`**. You only need Google
 |:-:|---|
 | ⚙️ | **Search settings**: location & max distance, budget, size, amenities, gender, AI provider, AI instructions |
 | 📜 | **Activity log**: every step the agent took |
-| 🪙 | **Koo credits**: sign in, balance, buy packs by UPI |
+| 🪙 | **Koo credits**: local mode for now; sign-in and UPI packs are coming soon |
 | 🏆 | **Matches**: sort chips, CSV export, cart-style items with rent on the right and contacts at the bottom |
 | 🗂️ | **All decisions**: every post the AI checked, with its reason |
 | 🗑️ | **Clear history**: click twice; forgets read posts, decisions and the log |
@@ -103,11 +107,11 @@ between scenes is animated: take-off, landing, and flying down to the river.
 
 | | Your own API key | 🪙 Koo credits |
 |---|---|---|
-| **You need** | An OpenAI, Google Gemini or Anthropic key | A Google account and UPI |
-| **Set up in** | ⚙️ Search settings → Provider | ⚙️ Provider = Koo credits, then 🪙 Sign in |
+| **You need** | An OpenAI, Google Gemini or Anthropic key | *Coming soon:* a Google account and UPI. For now: the local server |
+| **Set up in** | ⚙️ Search settings → Provider | ⚙️ Provider = Koo credits (sign-in is switched off for now) |
 | **Your key goes to** | Only that provider (stored on your computer, unencrypted) | Not needed; Koo's key is used |
 | **Cost** | Billed by your provider | **1 🪙 = ₹1 = 5 AI requests** (5 posts each). Packs: ₹100 → 100 🪙 · ₹200 → 200 🪙 · ₹500 → 500 🪙 |
-| **Free to try** | — | **5 🪙 free** on sign-up (25 requests = 125 posts) |
+| **Free to try** | — | **10 🪙 free** on sign-up (50 requests = 250 posts) |
 
 > **Local mode:** while no central Koo API is deployed, Koo credits use the **local server** at `localhost:8787`
 > (`npm run server`), with no sign-in and no credits. See **Local server** below.
@@ -121,8 +125,8 @@ between scenes is animated: take-off, landing, and flying down to the river.
 | Command | What it does |
 |---|---|
 | `npm install` | Install dependencies |
-| `npm run build` | Production build → `output/chrome-mv3` **(commit it after changes, so downloads stay current)** |
-| `npm run dev` | Live-reload build → load `output/chrome-mv3-dev` (needs the dev server running; not committed) |
+| `npm run build` | Production build → `output/v1/chrome-mv3` **(commit it after changes, so downloads stay current)** |
+| `npm run dev` | Live-reload build → load `output/v1/chrome-mv3-dev` (needs the dev server running; not committed) |
 | `npm run server` | Local server: the AI router Koo credits use when no cloud API is configured |
 | `npm test` | Unit tests for `lib/` (Node's built-in runner); `npm run test:cloud` for the private worker |
 | `npm run cloud:dev` | Run the cloud API locally (Wrangler) |
@@ -172,6 +176,9 @@ When a cloud API is deployed and the extension is built with `WXT_API_URL`, Koo 
 
 <br>
 
+> **Status:** built but **switched off**: `SIGN_IN_ENABLED = false` in `lib/api.ts`. Until it's on, Koo credits use
+> the local server.
+
 ```text
 Panel ──sign in (Google)──► /auth      → Koo token (only its hash is stored)
 Panel ──buy ₹200─────────► /checkout  → UPI-only Razorpay Payment Link (user id attached)
@@ -181,14 +188,14 @@ Scanner ─5 posts────────► /classify  → checks credits → 
 
 | Endpoint | Purpose |
 |---|---|
-| `POST /auth` | Google access token → Koo token; a new account starts with 5 free 🪙 |
+| `POST /auth` | Google access token → Koo token; a new account starts with 10 free 🪙 |
 | `GET /me` | Email and credit balance |
 | `POST /checkout` | UPI-only Razorpay Payment Link for a ₹100 / ₹200 / ₹500 pack |
 | `POST /razorpay-webhook` | Verifies Razorpay's signature and credits the payment exactly once |
 | `POST /classify` | Up to 5 posts; charges 0.2 🪙; refuses below 0.2 🪙; failed AI calls cost nothing |
 
 **Pricing** (all in `lib/pricing.ts`): 1 credit = ₹1 paid = 5 AI requests; a request is one batch of 5 posts
-(0.2 credits); minimum top-up ₹100; new accounts get 5 free credits. The API rejects requests with more than 5 posts.
+(0.2 credits); minimum top-up ₹100; new accounts get 10 free credits. The API rejects requests with more than 5 posts.
 Your margin is ₹0.20 per request minus the AI provider's cost for 5 posts; Razorpay takes about 2% + GST per payment.
 
 </details>
@@ -206,7 +213,7 @@ Your margin is ₹0.20 per request minus the AI provider's cost for 5 posts; Raz
 | 4 | **Deploy** | `npm run cloud:deploy` → note `https://koo.<you>.workers.dev` |
 | 5 | **Razorpay** | Webhook `https://<worker>/razorpay-webhook`, event **`payment_link.paid`**, same secret as `RZP_WEBHOOK_SECRET` (test keys first) |
 | 6 | **Google** | OAuth client of type **Chrome Extension**, item ID **`ickjoonhepcjfhdiopbckhgalfdgijbj`** |
-| 7 | **Build** | `.env` with `WXT_API_URL=…` and `WXT_GOOGLE_CLIENT_ID=…` → `npm run build` → commit `output/chrome-mv3/` |
+| 7 | **Build** | `.env` with `WXT_API_URL=…` and `WXT_GOOGLE_CLIENT_ID=…` → `npm run build` → commit `output/v1/chrome-mv3/` |
 | 8 | **AI balance** | Turn on auto-recharge in your AI provider's billing settings |
 
 </details>

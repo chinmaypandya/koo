@@ -50,7 +50,7 @@ function App() {
   const busy = agent === 'starting' || agent === 'stopping';
   const active = agent !== 'sleeping' && agent !== 'error';
   const energy: number = active ? s.energy ?? 100 : 100; // stopped → full energy
-  const counts: Partial<Record<PanelId, number>> = { matches: matches.length, decisions: results.length, ...(s.token && { credits: Math.floor(s.credits ?? 0) }) };
+  const counts: Partial<Record<PanelId, number>> = { matches: matches.length, decisions: results.length, ...(s.token && !LOCAL && { credits: Math.floor(s.credits ?? 0) }) };
 
   const send = async (type: string) => {
     const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
@@ -233,7 +233,7 @@ function Credits({ s }: { s: Record<string, any> }) {
     }
   };
 
-  if (!s.token && LOCAL)
+  if (LOCAL)
     return (
       <>
         <p><b>Local mode.</b> No central Koo API is set up yet, so Koo credits use your local one at <code>{API}</code>:

@@ -7,15 +7,16 @@ const googleClientId = process.env.WXT_GOOGLE_CLIENT_ID;
 
 export default defineConfig({
   modules: ['@wxt-dev/module-react'],
-  outDir: 'output', // visible in Chrome's "Load unpacked" picker, unlike .output
+  outDir: 'output/v1', // builds land in output/v1/chrome-mv3 (visible in Chrome's "Load unpacked" picker)
   // Vite scans every non-hidden .html for deps, which now includes output/; limit it to our sources.
   vite: () => ({ optimizeDeps: { entries: ['entrypoints/**/*.html'] } }),
-  // Chrome 137+ ignores --load-extension, so load output/chrome-mv3-dev manually via chrome://extensions.
+  // Chrome 137+ ignores --load-extension, so load output/v1/chrome-mv3-dev manually via chrome://extensions.
   webExt: { disabled: true },
   manifest: {
     name: 'Koo',
     description: 'Reads Facebook group posts for you and finds flats that match.',
-    permissions: ['storage', 'sidePanel', 'identity'],
+    // `identity` (Google sign-in) only when sign-in is configured; it's switched off for now (lib/api.ts).
+    permissions: ['storage', 'sidePanel', ...(googleClientId ? ['identity'] : [])],
     // Own-key providers + our cloud API (Koo credits).
     host_permissions: ['https://api.anthropic.com/*', 'https://api.openai.com/*', 'https://generativelanguage.googleapis.com/*', `${api.origin}/*`],
     action: {},

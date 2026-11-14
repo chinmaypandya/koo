@@ -24,7 +24,9 @@ async function cloudClassify(posts: Post[], filters: Filters | undefined, prompt
 }
 
 export default defineBackground(() => {
-  browser.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
+  // v2 has no side panel: the toolbar icon opens Koo's panel on the page instead.
+  if (import.meta.env.WXT_V2) browser.action.onClicked.addListener((tab) => void browser.tabs.sendMessage(tab.id ?? -1, { type: 'panel' }).catch(() => {}));
+  else browser.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
   // The "Koo credits" choice used to be stored as 'openbroker'; keep users' saved choice after the rename.
   browser.storage.local.get('provider').then(({ provider }) => { if (provider === 'openbroker') browser.storage.local.set({ provider: 'koo' }); });
 

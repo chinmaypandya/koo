@@ -6,6 +6,9 @@ output/*
 !output/v1/
 output/v1/*
 !output/v1/chrome-mv3/
+!output/v2/
+output/v2/*
+!output/v2/chrome-mv3/
 *.log
 
 # Secrets: real and example env files (variables are documented in README.md)

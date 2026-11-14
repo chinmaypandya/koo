@@ -39,16 +39,23 @@
 
 ## 🚀 Use it yourself (no coding needed)
 
-The extension is already built in **`output/v1/chrome-mv3/`**. You only need Google Chrome.
+The extension is already built, in two versions. You only need Google Chrome.
+
+| Version | Folder | Where Koo lives |
+|---|---|---|
+| **v1** | **`output/v1/chrome-mv3`** | In Chrome's side panel, next to the page, with its own sky, city and rooftop breaks |
+| **v2** | **`output/v2/chrome-mv3`** | On the Facebook page itself: Koo flies over each post it reads, collects it into its backpack (■■■□□ counts the batch), sends every 5 with a gust of wind, and hovers in place for breaks. Its status shows in a speech bubble; the panel opens from the **KOO** button at the bottom right (or the toolbar icon) |
+
+Both can be installed side by side ("Koo" and "Koo v2"); each keeps its own settings and history. v2's overlay is part of Facebook's page, so Facebook can see that it's there (not what's in it).
 
 | Step | Do this |
 |:-:|---|
 | **1** | **Download:** on GitHub click **Code → Download ZIP** and unzip it, or `git clone` the repo |
 | **2** | Open **`chrome://extensions`** in the address bar |
 | **3** | Turn on **Developer mode** (top-right switch). It only allows installing from a folder |
-| **4** | Click **Load unpacked** and select the **`output/v1/chrome-mv3`** folder (the one with `manifest.json`) |
+| **4** | Click **Load unpacked** and select **`output/v1/chrome-mv3`** or **`output/v2/chrome-mv3`** (the folder with `manifest.json`) |
 | **5** | Click the 🧩 puzzle icon and **pin Koo** |
-| **6** | Open the panel and go to **⚙️ Search settings**: choose how the AI is paid for and fill in what you want |
+| **6** | Open the panel (v2: the **KOO** button on Facebook) and go to **⚙️ Search settings**: choose how the AI is paid for and fill in what you want |
 | **7** | Open a Facebook flat-rental group (logged in) and press **Start**. Matches appear under **🏆** |
 
 | To… | Do this |
@@ -127,8 +134,8 @@ rooftop) is smooth.
 | Command | What it does |
 |---|---|
 | `npm install` | Install dependencies |
-| `npm run build` | Production build → `output/v1/chrome-mv3` **(commit it after changes, so downloads stay current)** |
-| `npm run dev` | Live-reload build → load `output/v1/chrome-mv3-dev` (needs the dev server running; not committed) |
+| `npm run build` | Production builds of both versions → `output/v1/chrome-mv3` and `output/v2/chrome-mv3` **(commit them after changes, so downloads stay current)**. `npm run build v1` or `npm run build v2` builds just one |
+| `npm run dev` · `npm run dev:v2` | Live-reload build → load `output/v1/chrome-mv3-dev` or `output/v2/chrome-mv3-dev` (needs the dev server running; not committed) |
 | `npm run server` | Local server: the AI router Koo credits use when no cloud API is configured |
 | `npm test` | Unit tests for `lib/` (Node's built-in runner); `npm run test:cloud` for the private worker |
 | `npm run cloud:dev` | Run the cloud API locally (Wrangler) |
@@ -139,13 +146,14 @@ rooftop) is smooth.
 |---|---|
 | `entrypoints/content.ts` | Facebook scanner: scroll, read, dedupe, batch, energy & breaks. **Page selectors are in `SEL` at the top** |
 | `entrypoints/background.ts` | Receives batches, calls the AI (your key or the cloud API), stores decisions |
-| `entrypoints/sidepanel/` | Panel UI (React) and Koo (`koo.tsx`) |
+| `entrypoints/sidepanel/` | Panel UI (React) and Koo (`koo.tsx`). v2 shows this same page in an iframe on Facebook |
+| `lib/overlay.ts` | v2 only: Koo flying over the page, collecting posts, the gust, the speech bubble and the KOO button |
 | `lib/classify.ts` | Prompt, AI provider calls, post IDs, text cleanup, phone numbers & country codes |
 | `lib/energy.ts` · `sort.ts` · `csv.ts` | Koo's energy model · match ordering · CSV export |
 | `server/` *(local, not in this repo)* | Local server: fallback AI router on `localhost:8787`, key from `server/.env` |
 | `lib/pricing.ts` | Koo credits pricing shared with the worker: packs, 5 requests per credit, batch of 5, sign-up bonus |
 | `cloud/` *(private, not in this repo)* | The paid cloud API worker: sign-in, credits, UPI checkout, webhook, paid AI calls |
-| `wxt.config.ts` | Manifest and build config (the fixed extension `key` lives here) |
+| `wxt.config.ts` | Manifest and build config (the fixed extension `key` lives here; `WXT_V2=1` switches to the v2 build) |
 
 Chrome 137+ no longer lets tools auto-load extensions, so loading is always manual. Icons are in `public/icon/`.
 

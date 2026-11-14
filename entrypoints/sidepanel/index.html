@@ -153,6 +153,10 @@
       .sortchip button + button { border-left: var(--b); }
       .sortchip b { display: inline-block; min-width: 16px; margin-right: 4px; background: var(--fg); color: #fff; font: 700 11px/16px var(--mono); }
 
+      /* v2 (this page in an iframe on Facebook): captions show beside Koo on the page, and popups fill the panel. */
+      .overlay .top { grid-template-columns: 1fr; }
+      .overlay .modal { top: 92px; bottom: 10px; transform: none; max-height: none; }
+
       @keyframes scroll { to { transform: translateX(-50%); } }
       @keyframes drift { from { transform: translateX(110vw); } to { transform: translateX(-120px); } }
       @keyframes bricks { to { background-position: -24px 0; } }

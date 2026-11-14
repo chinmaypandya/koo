@@ -25,6 +25,10 @@ const PANELS = {
 } as const;
 type PanelId = keyof typeof PANELS;
 
+// v2 loads this page in an iframe on Facebook (lib/overlay.ts); Koo flies on the page there, so the panel skips its own stage.
+const OVERLAY = location.search.includes('overlay');
+document.documentElement.classList.toggle('overlay', OVERLAY); // index.html: popups fill the panel
+
 function App() {
   const [s, setS] = useState<Record<string, any> | null>(null);
   const [panel, setPanel] = useState<PanelId | null>(null);
@@ -123,13 +127,16 @@ function App() {
 
   return (
     <>
-      <KooStage agent={agent} breakUntil={s.breakUntil} breakKind={s.breakKind} />
-      {active && s.breakUntil > 0 && <BreakTimer kind={s.breakKind} until={s.breakUntil} />}
+      {!OVERLAY && <KooStage agent={agent} breakUntil={s.breakUntil} breakKind={s.breakKind} />}
+      {/* In v2, the caption, status and break countdown show beside Koo on the page instead (lib/overlay.ts). */}
+      {!OVERLAY && active && s.breakUntil > 0 && <BreakTimer kind={s.breakKind} until={s.breakUntil} />}
       <div className="top">
-        <div className="bubble" aria-live="polite">
-          <strong>{STATES[agent]!.caption}</strong>
-          {s.status && <small title={s.status}>{s.status}</small>}
-        </div>
+        {!OVERLAY && (
+          <div className="bubble" aria-live="polite">
+            <strong>{STATES[agent]!.caption}</strong>
+            {s.status && <small title={s.status}>{s.status}</small>}
+          </div>
+        )}
         <button className={`go${active && !busy ? ' stop' : ''}`} data-busy={busy || undefined} aria-busy={busy} onClick={toggle}>
           {agent === 'starting' ? 'Starting…' : agent === 'stopping' ? 'Stopping…' : active ? 'Stop' : 'Start'}
         </button>

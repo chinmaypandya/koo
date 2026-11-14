@@ -47,7 +47,13 @@ async function postsLoaded(handled: WeakSet<Element>, ms: number) {
 export default defineContentScript({
   // FB is a SPA, so match all of it and check for /groups/ when started.
   matches: ['https://www.facebook.com/*'],
+  // v2 draws Koo on the page, so it starts as soon as the page is parsed, not after Facebook finishes loading.
+  runAt: import.meta.env.WXT_V2 ? 'document_end' : undefined,
   main() {
+    // v2 build only (npm run build:v2): Koo flies over the page and the panel opens from a corner button.
+    // Loaded dynamically so the v1 bundle doesn't carry any of it.
+    let bird: ReturnType<typeof import('@/lib/overlay').mountOverlay> | null = null;
+    if (import.meta.env.WXT_V2) import('@/lib/overlay').then((m) => (bird = m.mountOverlay()));
     let running = false;
     let lines: string[] = [];
     const status = (s: string) => {
@@ -74,6 +80,7 @@ export default defineContentScript({
     });
 
     browser.runtime.onMessage.addListener((msg) => {
+      if (msg.type === 'panel') bird?.panel();
       if (msg.type === 'stop') running ? (running = false) : mood('sleeping'); // a running scan sets sleeping when it ends
       if (msg.type === 'start' && !running) {
         running = true;
@@ -110,6 +117,7 @@ export default defineContentScript({
       const flush = async () => {
         const posts = batch;
         batch = [];
+        bird?.gust();
         log(`Sending ${posts.length} posts to the AI…`);
         inFlight++;
         const res = await browser.runtime.sendMessage({ type: 'classify', posts });
@@ -179,6 +187,7 @@ export default defineContentScript({
           const t0 = Date.now();
           let paced = false; // only real posts take a full second; loading placeholders don't
           el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          bird?.visit(el);
           try {
             const more = [...el.querySelectorAll<HTMLElement>(SEL.button)].find((b) => b.textContent?.trim() === 'See more');
             if (more) { more.click(); await sleep(120); } // let the expanded text render
@@ -203,6 +212,7 @@ export default defineContentScript({
               author: author?.innerText.trim() || null,
               author_url: author?.href.split('?')[0] ?? null, // drop FB tracking params
             });
+            bird?.collect(el);
             if (batch.length >= BATCH) pending.push(flush());
             if (seenStreak >= MAX_SEEN_STREAK) break;
           } finally {

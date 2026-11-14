@@ -22,21 +22,21 @@ const C = { blue: '#2563EB', light: '#93C5FD', orange: '#F59E0B', cream: '#FEF3C
 // (a new in-between every frame, ~60/s) and a state change blends from wherever Koo is to the new motion.
 // wing: degrees above horizontal; fold 0 = spread wide, 1 = tucked; hold/tilt: bottle out of the bag / tipped to the beak;
 // land: 0 = flying at sky height, 1 = on the rooftop; perch: on the night branch; roof: rooftop x (1 right, 0 under Koo, -1 left).
-const REST = { x: 0, y: 0, rot: 0, sy: 1, wing: -68, fold: 1, feet: 1, hold: 0, tilt: 0, puff: 0, beak: 0, float: 0, land: 0, perch: 0, roof: 1 };
-type Pose = typeof REST;
+export const REST = { x: 0, y: 0, rot: 0, sy: 1, wing: -68, fold: 1, feet: 1, hold: 0, tilt: 0, puff: 0, beak: 0, float: 0, land: 0, perch: 0, roof: 1 };
+export type Pose = typeof REST;
 type Face = 'open' | 'shut' | 'happy' | 'tired' | 'cross' | 'angry';
 type Frame = { pose: Pose; face: Face; fx?: string };
 
 const TAU = Math.PI * 2;
-const wave = (t: number, ms: number, phase = 0) => Math.sin((t / ms) * TAU + phase);
-const ease = (k: number) => ((k = Math.min(1, Math.max(0, k))), k * k * (3 - 2 * k));
+export const wave = (t: number, ms: number, phase = 0) => Math.sin((t / ms) * TAU + phase);
+export const ease = (k: number) => ((k = Math.min(1, Math.max(0, k))), k * k * (3 - 2 * k));
 const pose = (p: Partial<Pose>): Pose => ({ ...REST, ...p });
-const mix = (a: Pose, b: Pose, k: number) => {
+export const mix = (a: Pose, b: Pose, k: number) => {
   const o = { ...a };
   for (const n in a) o[n as keyof Pose] += (b[n as keyof Pose] - a[n as keyof Pose]) * k;
   return o;
 };
-const fly = (t: number, ms = 380) => pose({ wing: 8 + 40 * wave(t, ms), fold: 0, feet: 0, y: -6 * wave(t, ms, 1.2), rot: 3 });
+export const fly = (t: number, ms = 380) => pose({ wing: 8 + 40 * wave(t, ms), fold: 0, feet: 0, y: -6 * wave(t, ms, 1.2), rot: 3 });
 
 // The break, scripted on the clock from its start: land → heavy breathing → bottle out → drink → bottle back → fly up.
 function breakFrame(t: number, kind: 'water' | 'energy'): Frame {
@@ -62,7 +62,7 @@ function breakFrame(t: number, kind: 'water' | 'energy'): Frame {
   return { face: 'open', pose: { ...mix(sat, fly(t), ease(k / 0.25)), land: 1 - ease(k), roof: -(1 - Math.cos((k * Math.PI) / 2)) } };
 }
 
-function frameOf(state: string, t: number, sinceBreak: number): Frame {
+export function frameOf(state: string, t: number, sinceBreak: number): Frame {
   switch (state) {
     case 'drinking': return breakFrame(sinceBreak, 'water');
     case 'energy': return breakFrame(sinceBreak, 'energy');
@@ -76,10 +76,10 @@ function frameOf(state: string, t: number, sinceBreak: number): Frame {
 }
 
 // Drawn on a 240-unit canvas at PX×PX, every pixel snapped to Koo's palette: crisp retro pixels, scaled up unblurred.
-const PX = 96, U = 240, FEET = 196;
+export const PX = 96, U = 240, FEET = 196;
 const PALETTE = [...Object.values(C), '#FFFFFF', '#DC2626', '#FDE047'].map((h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16)));
 
-function paint(g: CanvasRenderingContext2D, p: Pose, face: Face, state: string, fx?: string) {
+export function paint(g: CanvasRenderingContext2D, p: Pose, face: Face, state: string, fx?: string) {
   g.setTransform(1, 0, 0, 1, 0, 0);
   g.clearRect(0, 0, PX, PX);
   g.setTransform(PX / U, 0, 0, PX / U, 0, 0);

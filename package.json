@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "wxt",
-    "build": "wxt build",
+    "build": "sh -c 'for v in ${@:-v1 v2}; do case $v in v1) WXT_V2= wxt build ;; v2) WXT_V2=1 wxt build ;; *) echo \"usage: npm run build [v1|v2]\"; exit 1 ;; esac || exit 1; done' build",
+    "dev:v2": "WXT_V2=1 wxt",
     "test": "node --test lib/",
     "postinstall": "wxt prepare",
     "cloud:dev": "wrangler dev --config cloud/wrangler.toml",

@@ -395,16 +395,14 @@ function Verdicts({ items, empty }: { items: any[]; empty: string }) {
           </div>
           <footer>
             {/* Older matches were saved before numbers were extracted in code, so fall back to scanning their text. */}
-            {(r.contact?.length ? r.contact : phones(r.raw_text ?? '')).length ? (
-              <>📞 {(r.contact?.length ? r.contact : phones(r.raw_text ?? '')).map((n: string, i: number) => (
+            {(r.contact?.length ? r.contact : phones(r.raw_text ?? '')).length > 0 && (
+              <div>📞 {(r.contact?.length ? r.contact : phones(r.raw_text ?? '')).map((n: string, i: number) => (
                 <span key={n} className="num">{i > 0 && ', '}{n}</span>
               ))}
-              {r.country_code_source === 'ai' && <small title="The post didn't include a country code; guessed from the post, group or your target location."> · {r.country_code} guessed</small>}</>
-            ) : r.author_url ? (
-              <>💬 <a href={r.author_url} target="_blank">Message {r.author ?? 'the poster'} on Facebook</a></>
-            ) : (
-              <span className="muted">No number or poster link found</span>
+              {r.country_code_source === 'ai' && <small title="The post didn't include a country code; guessed from the post, group or your target location."> · {r.country_code} guessed</small>}</div>
             )}
+            {r.author_url && <div>💬 <a href={r.author_url} target="_blank">{r.author ?? 'Poster'} on Facebook</a></div>}
+            {!r.author_url && !(r.contact?.length || phones(r.raw_text ?? '').length) && <span className="muted">No number or poster link found</span>}
           </footer>
         </li>
       ))}

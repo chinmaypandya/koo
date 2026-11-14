@@ -15,6 +15,7 @@ const SEL = {
 };
 const MAX_NEW = 50, MAX_SEEN_STREAK = 15, MAX_EMPTY_SCROLLS = 5, MONTH = 30 * 864e5;
 const BATCH_WAIT = 30_000; // send a partial batch if it hasn't filled up within this time
+const POST_PACE_MS = 1000; // one post per second while scanning
 const LOAD_WAIT = 3000; // max ms to wait for Facebook to fill in posts before scrolling on
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const cardText = (el: Element) => cleanText((el.querySelector<HTMLElement>(SEL.message) ?? (el as HTMLElement)).innerText);
@@ -28,7 +29,7 @@ async function postLink(el: Element) {
   if (!hidden.length) return undefined;
   for (const a of hidden) for (const type of ['pointerover', 'mouseover', 'focusin'])
     a.dispatchEvent(new (type === 'focusin' ? FocusEvent : MouseEvent)(type, { bubbles: true }));
-  await sleep(250);
+  await sleep(120); // just long enough for Facebook to swap in the real href
   const href = found();
   for (const a of hidden) a.dispatchEvent(new MouseEvent('mouseout', { bubbles: true }));
   return href;
@@ -36,7 +37,7 @@ async function postLink(el: Element) {
 
 // Polls until an unhandled card has readable text (true) or the time runs out (false).
 async function postsLoaded(handled: WeakSet<Element>, ms: number) {
-  for (const end = Date.now() + ms; Date.now() < end; await sleep(300)) {
+  for (const end = Date.now() + ms; Date.now() < end; await sleep(100)) {
     if ([...document.querySelectorAll(SEL.post)].some((el) => !handled.has(el) && cardText(el).length >= 20)) return true;
   }
   return false;
@@ -172,30 +173,40 @@ export default defineContentScript({
         for (const el of cards) {
           if (due) break; // a break is due: stop reading new posts right away
           if (handled.has(el) || !running) continue;
-          const more = [...el.querySelectorAll<HTMLElement>(SEL.button)].find((b) => b.textContent?.trim() === 'See more');
-          if (more) { more.click(); await sleep(300); }
-          const text = cardText(el);
-          if (text.length < 20) continue; // placeholder not rendered yet; retry once it loads
-          handled.add(el);
-          found++;
+          // One post per second, steadily: glide this post into view, read it, then wait out the rest of its second
+          // (the 'See more' and link lookups count toward it), so Koo visibly passes post after post.
+          const t0 = Date.now();
+          let paced = false; // only real posts take a full second; loading placeholders don't
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          try {
+            const more = [...el.querySelectorAll<HTMLElement>(SEL.button)].find((b) => b.textContent?.trim() === 'See more');
+            if (more) { more.click(); await sleep(120); } // let the expanded text render
+            const text = cardText(el);
+            if (text.length < 20) continue; // placeholder not rendered yet; retry once it loads
+            handled.add(el);
+            found++;
+            paced = true;
 
-          const href = await postLink(el);
-          const id = postId(href, location.pathname + longestLine(text));
-          if (seenIds[id]) { skipped++; seenStreak++; log(`Skipped (already read) [${id}] ${snip(text)}`); continue; }
-          seenStreak = 0;
-          fresh++;
-          seenIds[id] = Date.now();
-          log(`Read post [${id}] ${snip(text)}`);
-          if (!href) log(`  (no post link found for [${id}]; it will link to the group page)`);
-          if (!batch.length) batchStart = Date.now();
-          const author = el.querySelector<HTMLAnchorElement>(SEL.author);
-          batch.push({
-            id, url: href ?? location.href, group: document.title, text: text.slice(0, 2000),
-            author: author?.innerText.trim() || null,
-            author_url: author?.href.split('?')[0] ?? null, // drop FB tracking params
-          });
-          if (batch.length >= BATCH) pending.push(flush());
-          if (fresh >= MAX_NEW || seenStreak >= MAX_SEEN_STREAK) break;
+            const href = await postLink(el);
+            const id = postId(href, location.pathname + longestLine(text));
+            if (seenIds[id]) { skipped++; seenStreak++; log(`Skipped (already read) [${id}] ${snip(text)}`); continue; }
+            seenStreak = 0;
+            fresh++;
+            seenIds[id] = Date.now();
+            log(`Read post [${id}] ${snip(text)}`);
+            if (!href) log(`  (no post link found for [${id}]; it will link to the group page)`);
+            if (!batch.length) batchStart = Date.now();
+            const author = el.querySelector<HTMLAnchorElement>(SEL.author);
+            batch.push({
+              id, url: href ?? location.href, group: document.title, text: text.slice(0, 2000),
+              author: author?.innerText.trim() || null,
+              author_url: author?.href.split('?')[0] ?? null, // drop FB tracking params
+            });
+            if (batch.length >= BATCH) pending.push(flush());
+            if (fresh >= MAX_NEW || seenStreak >= MAX_SEEN_STREAK) break;
+          } finally {
+            if (paced) await sleep(Math.max(0, POST_PACE_MS - (Date.now() - t0)));
+          }
         }
         if (due) continue; // take the break before waiting or scrolling
         // Nothing new usually means Facebook is still loading: wait for posts to fill in instead of scrolling past them.
@@ -206,9 +217,9 @@ export default defineContentScript({
         emptyScrolls = found ? 0 : emptyScrolls + 1;
         log(`Scroll ${++pass}: ${cards.length} post cards on page, ${found} new to look at.`);
         status(`Scrolling… ${fresh} new, ${skipped} already seen`);
-        // Human-ish: smooth scroll of most of a screen, then a short, varied pause to "read".
-        window.scrollBy({ top: innerHeight * (0.6 + Math.random() * 0.3), behavior: 'smooth' });
-        await sleep(600 + Math.random() * 900);
+        // Every rendered post has been passed; nudge down a screen so Facebook loads the next ones (the loop above waits
+        // for them instead of scrolling past the gap).
+        window.scrollBy({ top: innerHeight, behavior: 'smooth' });
       }
       if (batch.length && !failed) pending.push(flush());
       if (pending.length) log('Waiting for the AI to finish the last posts…');

@@ -30,9 +30,10 @@ function App() {
   const [panel, setPanel] = useState<PanelId | null>(null);
   const [armed, setArmed] = useState(false); // Clear history needs a second click within 3s
   useEffect(() => {
-    const load = () => browser.storage.local.get(null).then(setS);
+    // get() with no argument = everything saved; `?? {}` so an empty/odd result can't crash the panel.
+    const load = () => browser.storage.local.get().then((d) => setS(d ?? {}));
     // First use (no filters yet): open the settings so there's something to fill in.
-    browser.storage.local.get(null).then((d) => {
+    browser.storage.local.get().then((d = {}) => {
       setS(d);
       if (!Object.values(d.filters ?? {}).some(Boolean)) setPanel('settings');
     });

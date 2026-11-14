@@ -12,6 +12,12 @@ export const ENERGY = {
   energyDrinkTo: 75,
 } as const;
 
+// A break as Koo acts it out in the side panel: land on a rooftop, catch breath, bottle out of the bag, drink, bottle back,
+// fly up. The scan pauses for all of it, so a break lasts this choreography plus the drinking time.
+export const BREAK = { land: 1600, breathe: 1000, bag: 700, takeoff: 1600 } as const;
+export const breakMs = (kind: 'water' | 'energy') =>
+  (kind === 'water' ? ENERGY.waterBreakMs : ENERGY.energyDrinkMs) + BREAK.land + BREAK.breathe + 2 * BREAK.bag + BREAK.takeoff;
+
 // nextWater: the next 10% mark that triggers a water break (it only moves down, so +4% from water can't re-trigger it).
 export type Energy = { level: number; lastTick: number; nextWater: number };
 export type Break = 'water' | 'energy' | null;

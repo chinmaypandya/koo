@@ -15,7 +15,8 @@
 
 <table>
   <tr>
-    <td width="40%" valign="top"><img src=".github/readme/panel.png" alt="Koo side panel: status, Start/Stop, energy bar, side buttons and Koo flying over the city"></td>
+    <td width="40%" valign="top" align="center"><img src=".github/readme/koo-break.gif" alt="Koo side panel: Koo flies over the city, lands on a rooftop for a water break, drinks and flies back up"><br>
+    <a href=".github/readme/koo-demo.mp4"><b>▶️ Watch the full demo (1:46)</b></a></td>
     <td valign="top">
 
 ### What it does
@@ -95,11 +96,12 @@ The extension is already built in **`output/v1/chrome-mv3/`**. You only need Goo
 | <img src=".github/readme/koo/searching.png" width="120" alt="Koo flying"> | ✈️ **Searching** | Flying over the city | Reading posts |
 | <img src=".github/readme/koo/dancing.png" width="120" alt="Koo dancing with a music note"> | 🎉 **Dancing** | Mid-air, music notes | A batch had a match (2 s) |
 | <img src=".github/readme/koo/irritated.png" width="120" alt="Koo looking irritated"> | 😤 **Irritated** | Still flying, 💢 | Energy 25–50% (it keeps searching) |
-| <img src=".github/readme/koo/drinking.png" width="120" alt="Koo drinking from a water bottle"> | 💧 **Water break** · ⚡ **Energy drink** | Riverbank, with a countdown | Water at 90, 80 … 30% energy (5 s, +4%) · energy drink at 25% (15 s, back to 75%) |
+| <img src=".github/readme/koo/drinking.png" width="120" alt="Koo drinking from a water bottle"> | 💧 **Water break** · ⚡ **Energy drink** | Lands on a rooftop, catches its breath, drinks, flies back up, with a countdown | Water at 90, 80 … 30% energy (5 s of drinking, +4%) · energy drink at 25% (15 s, back to 75%) |
 | <img src=".github/readme/koo/sleeping.png" width="120" alt="Koo sleeping on its backpack"> | 😴 **Sleeping** | Night, tree branch | Stopped (energy resets to 100%) |
 
-Energy drains **1% per second** while searching, and a match adds **+2%**. Scanning pauses during breaks. Every move
-between scenes is animated: take-off, landing, and flying down to the river.
+Energy drains **1% per second** while searching, and a match adds **+2%**. Scanning pauses for the whole break, landing and
+take-off included. Koo is redrawn every frame in a retro pixel style, so every move (take-off, landing on the branch or a
+rooftop) is smooth.
 
 ---
 

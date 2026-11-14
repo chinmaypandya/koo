@@ -123,7 +123,7 @@ function App() {
 
   return (
     <>
-      <KooStage agent={agent} />
+      <KooStage agent={agent} breakUntil={s.breakUntil} breakKind={s.breakKind} />
       {active && s.breakUntil > 0 && <BreakTimer kind={s.breakKind} until={s.breakUntil} />}
       <div className="top">
         <div className="bubble" aria-live="polite">

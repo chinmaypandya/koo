@@ -1,6 +1,6 @@
 import { cleanText, longestLine, postId, type Post } from '@/lib/classify';
 import { BATCH_SIZE as BATCH } from '@/lib/pricing';
-import { ENERGY, addMatches, afterBreak, fullEnergy, isIrritated, tick, type Break } from '@/lib/energy';
+import { addMatches, breakMs, afterBreak, fullEnergy, isIrritated, tick, type Break } from '@/lib/energy';
 
 // All FB selectors live here — fix these first when Facebook changes its DOM.
 const SEL = {
@@ -152,7 +152,7 @@ export default defineContentScript({
         if (due) {
           // Water at each 10% mark (90…30), energy drink at 25%. Reading and scrolling pause for the whole break;
           // breakUntil lets the panel show a countdown.
-          const kind = due, ms = kind === 'water' ? ENERGY.waterBreakMs : ENERGY.energyDrinkMs;
+          const kind = due, ms = breakMs(kind);
           log(kind === 'water' ? `Water break (${ms / 1000}s)…` : `Energy at ${Math.round(energy.level)}%: energy-drink break (${ms / 1000}s)…`);
           onBreak = kind;
           browser.storage.local.set({ breakKind: kind, breakUntil: Date.now() + ms });

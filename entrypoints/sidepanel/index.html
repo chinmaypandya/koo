@@ -8,7 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
     <style>
       /* Layout: compact fixed top row (status card + Start/Stop) and energy bar; Koo in the centre over a living scene
-         (city while searching, tree branch while sleeping, riverbank on breaks); square icon buttons down both sides
+         (city while searching, tree branch while sleeping, a rooftop on breaks); square icon buttons down both sides
          open one scrollable panel at a time.
          Neo-brutalist (after loot-drop.io): 3px black borders, square corners, hard offset shadows. Deliberately light-only. */
       :root {
@@ -28,30 +28,43 @@
       .top { position: fixed; z-index: 2; top: 10px; left: 10px; right: 10px; height: 44px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
       .bubble { min-width: 0; overflow: hidden; background: var(--card); border: var(--b); box-shadow: var(--shadow); padding: 3px 8px; }
 
-      /* Koo + scenes (all behind the UI). Moving between scenes animates `top`, which reads as take-off / landing. */
+      /* Koo + scenes (all behind the UI), styled like a retro platformer. Koo is redrawn every animation frame (koo.tsx), which
+         also sets --land (0 sky → 1 rooftop), --perch (0 sky → 1 night branch) and --roof (rooftop x: 1 right, 0 centre, -1 left).
+         Koo's feet sit 31% of --s below the sprite's centre; the branch and rooftop tops line up with that. */
+      .stage { display: contents; --s: min(80vw, 40vh, 320px); }
       .scenes { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
       .scene { position: absolute; inset: 0; opacity: 0; transition: opacity .9s ease; overflow: hidden; }
       .scene.on { opacity: 1; }
-      .buddy { position: fixed; z-index: 1; left: 50%; width: min(56vw, 220px); height: 30vh; transform: translate(-50%, -50%);
-        pointer-events: none; transition: top 1.4s cubic-bezier(.45, 0, .25, 1); }
-      .buddy.at-sky { top: 44%; } .buddy.at-tree { top: 56%; } .buddy.at-river { top: 60%; }
-      .koo, .koo-svg { width: 100%; height: 100%; overflow: visible; }
+      .buddy { position: fixed; z-index: 1; left: 50%; top: 44vh; width: var(--s); height: var(--s); pointer-events: none;
+        transform: translate(-50%, -50%) translateY(calc(var(--perch, 0) * 12vh + var(--land, 0) * (34vh - 8px - var(--s) * .31))); }
+      .koo { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+      .halt .skyline, .halt .ground, .halt .cloud { animation-play-state: paused; }
 
-      .sky { background: linear-gradient(#dbeafe, var(--bg) 80%); }
-      .skyline { position: absolute; left: 0; bottom: 0; width: 200vw; animation: scroll linear infinite; }
-      .skyline.far { height: 30vh; fill: #93C5FD; animation-duration: 32s; }
-      .skyline.near { height: 18vh; fill: #0F172A; animation-duration: 14s; }
-      .cloud { position: absolute; width: 90px; height: 28px; background: #fff; border: var(--b); border-radius: 20px; animation: drift linear infinite; }
-      .cloud.c1 { top: 22%; animation-duration: 18s; } .cloud.c2 { top: 34%; width: 60px; animation-duration: 26s; animation-delay: -12s; }
-      .tree { background: linear-gradient(#1e293b, #475569); }
-      .moon { position: absolute; top: 18%; right: 16%; width: 46px; height: 46px; border-radius: 50%; background: #FEF3C7; border: var(--b); }
-      /* Branch top sits where Koo's feet land: buddy centre (56%) + 45% of its 30vh height. */
-      .branch { position: absolute; left: -6%; width: 60%; top: calc(56% + 13.5vh); height: 18px; background: #7a4a22; border: var(--b); border-radius: 0 12px 12px 0; }
-      .branch::after { content: ""; position: absolute; left: 18%; top: -26px; width: 44px; height: 26px; background: #16a34a; border: var(--b); border-radius: 50% 50% 0 50%; }
-      .river { background: linear-gradient(#e0f2fe, var(--bg) 70%); }
-      .bank { position: absolute; left: 0; right: 0; top: calc(60% + 13.5vh); height: 5vh; background: #22c55e; border-top: var(--b); }
-      .water { position: absolute; left: 0; right: 0; top: calc(65% + 13.5vh); bottom: 0; border-top: var(--b);
-        background: repeating-linear-gradient(90deg, #2563EB 0 26px, #3b82f6 26px 52px); background-size: 104px 100%; animation: flow 3s linear infinite; }
+      .sky { background: #7eb6ff; }
+      .skyline { position: absolute; left: 0; bottom: 28px; width: 200vw; animation: scroll linear infinite; }
+      .skyline.far { height: 30vh; fill: #4f86e8; animation-duration: 32s; } .skyline.far .win { fill: #7eb6ff; }
+      .skyline.near { height: 18vh; fill: #0F172A; animation-duration: 14s; } .skyline.near .win { fill: #ffd600; }
+      .ground { position: absolute; left: 0; right: 0; bottom: 0; height: 28px; border-top: var(--b); background-color: #c2410c;
+        background-image: linear-gradient(#0a0a0a 2px, transparent 2px), linear-gradient(90deg, #0a0a0a 2px, transparent 2px);
+        background-size: 24px 13px; animation: bricks .5s linear infinite; }
+      /* Blocky cloud: a stepped silhouette instead of a rounded pill. */
+      .cloud { position: absolute; width: 96px; height: 32px; background: #fff; animation: drift linear infinite;
+        clip-path: polygon(0 100%, 0 62%, 12% 62%, 12% 38%, 25% 38%, 25% 12%, 38% 12%, 38% 0, 62% 0, 62% 12%, 75% 12%, 75% 38%, 88% 38%, 88% 62%, 100% 62%, 100% 100%); }
+      .cloud.c1 { top: 22%; animation-duration: 18s; } .cloud.c2 { top: 34%; width: 64px; animation-duration: 26s; animation-delay: -12s; }
+      /* The rooftop Koo lands on for a break: slides in under Koo while landing and out again on take-off. */
+      .roof { position: absolute; top: 78vh; bottom: 28px; left: calc(50% - 70px); width: 140px; border: var(--b); border-bottom: 0;
+        background: repeating-linear-gradient(90deg, #1e293b 0 12px, transparent 12px 24px), repeating-linear-gradient(#1e293b 0 10px, #ffd600 10px 20px);
+        transform: translateX(calc(var(--roof, 1) * 75vw)); }
+      .roof::before { content: ""; position: absolute; left: -10px; right: -10px; top: -11px; height: 8px; background: #475569; border: var(--b); }
+      .tree { background: #1e293b; }
+      .tree::before { content: ""; position: absolute; left: 0; top: 0; width: 4px; height: 4px; background: #fff;
+        box-shadow: 30px 90px #fff, 90px 150px #fde047, 160px 70px #fff, 240px 130px #fff, 300px 60px #fde047, 60px 220px #fff, 200px 200px #fff, 330px 180px #fff; }
+      .moon { position: absolute; top: 18%; right: 16%; width: 48px; height: 48px; background: #FEF3C7;
+        clip-path: polygon(30% 0, 70% 0, 70% 10%, 90% 10%, 90% 30%, 100% 30%, 100% 70%, 90% 70%, 90% 90%, 70% 90%, 70% 100%, 30% 100%, 30% 90%, 10% 90%, 10% 70%, 0 70%, 0 30%, 10% 30%, 10% 10%, 30% 10%); }
+      .branch { position: absolute; left: -6%; width: 60%; top: calc(56vh + var(--s) * .31); height: 18px; border: var(--b);
+        background: repeating-linear-gradient(90deg, #7a4a22 0 20px, #5c3517 20px 23px); }
+      .branch::after { content: ""; position: absolute; left: 18%; top: -27px; width: 44px; height: 24px; background: #16a34a;
+        clip-path: polygon(0 100%, 0 50%, 25% 50%, 25% 0, 75% 0, 75% 50%, 100% 50%, 100% 100%); }
 
       .energy { position: fixed; z-index: 2; top: 62px; left: 10px; right: 10px; height: 20px; display: flex; gap: 3px; align-items: stretch;
         background: var(--card); border: var(--b); box-shadow: var(--shadow-hover); padding: 2px; }
@@ -140,35 +153,9 @@
       .sortchip button + button { border-left: var(--b); }
       .sortchip b { display: inline-block; min-width: 16px; margin-right: 4px; background: var(--fg); color: #fff; font: 700 11px/16px var(--mono); }
 
-      /* Koo poses and states (assets/avatar.md §4) */
-      .wing { transform-box: fill-box; transition: transform .4s; }
-      .wing.l { transform-origin: right top; } .wing.r { transform-origin: left top; }
-      .feet, .zz, .notes, .swirl { transform-box: fill-box; transition: opacity .4s; }
-      .pose-fly .koo-svg { animation: glide 1.2s ease-in-out infinite; }
-      .pose-fly .wing.l { animation: flapL .28s ease-in-out infinite alternate; }
-      .pose-fly .wing.r { animation: flapR .28s ease-in-out infinite alternate; }
-      .pose-fly .feet { opacity: 0; }
-      .st-irritated.pose-fly .wing { animation-duration: .5s; }
-      .st-irritated .swirl { animation: pulse 1.2s ease-in-out infinite; transform-origin: center; }
-      .st-dancing .koo-svg { animation: twostep .5s ease-in-out 4; }
-      .st-dancing .notes, .st-sleeping .zz { animation: float 2s ease-in-out infinite; }
-      .st-sleeping.pose-sit .koo-svg { animation: breathe 3s ease-in-out infinite; }
-      .st-sleeping .wing.l { transform: rotate(-8deg) translateX(10px); } .st-sleeping .wing.r { transform: rotate(8deg) translateX(-10px); }
-      .sip { transform-box: fill-box; transform-origin: 50% 100%; animation: sip 5s ease-in-out infinite; }
-      .st-error .koo-svg { animation: shake .4s ease-in-out 2; }
-
       @keyframes scroll { to { transform: translateX(-50%); } }
       @keyframes drift { from { transform: translateX(110vw); } to { transform: translateX(-120px); } }
-      @keyframes flow { to { background-position: 104px 0; } }
-      @keyframes glide { 0%, 100% { transform: translateY(0) rotate(6deg); } 50% { transform: translateY(-10px) rotate(4deg); } }
-      @keyframes flapL { from { transform: rotate(10deg); } to { transform: rotate(70deg); } }
-      @keyframes flapR { from { transform: rotate(-10deg); } to { transform: rotate(-70deg); } }
-      @keyframes twostep { 25% { transform: translate(-8px, -8px) rotate(-8deg); } 75% { transform: translate(8px, -8px) rotate(8deg); } }
-      @keyframes breathe { 50% { transform: scale(1.03, .97) translateY(3px); } }
-      @keyframes sip { 0%, 25%, 75%, 100% { transform: none; } 40%, 60% { transform: translate(-14px, -18px) rotate(-55deg); } }
-      @keyframes pulse { 50% { transform: scale(1.25); } }
-      @keyframes shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
-      @keyframes float { 0% { transform: translateY(6px); opacity: 0; } 50% { opacity: 1; } 100% { transform: translateY(-10px); opacity: 0; } }
+      @keyframes bricks { to { background-position: -24px 0; } }
       @keyframes rise { from { opacity: 0; } }
       @keyframes pop { from { transform: translateY(6px); opacity: 0; } }
       @media (prefers-reduced-motion: reduce) { *, *::before { animation: none !important; transition: none !important; } }

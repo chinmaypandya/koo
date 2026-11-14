@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { addMatches, afterBreak, fullEnergy, isIrritated, tick, type Energy } from './energy.ts';
+import { addMatches, afterBreak, breakMs, fullEnergy, isIrritated, tick, type Energy } from './energy.ts';
 
 test('water breaks at 90, 80 … 30, each mark once; +4% does not re-trigger the same mark', () => {
   let e = fullEnergy(0);
@@ -37,4 +37,9 @@ test('matches add 2% each (capped at 100); irritated between 25 and 50', () => {
   assert.equal(addMatches({ level: 99, lastTick: 0, nextWater: 90 }, 3).level, 100);
   assert.equal(isIrritated(49), true);
   assert.equal(isIrritated(50), false);
+});
+
+test('the scan pauses for the whole rooftop scene: landing, breather, bottle in/out, drinking, take-off', () => {
+  assert.equal(breakMs('water'), 1600 + 1000 + 700 + 5000 + 700 + 1600);
+  assert.equal(breakMs('energy'), 1600 + 1000 + 700 + 15000 + 700 + 1600);
 });

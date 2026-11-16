@@ -43,7 +43,8 @@ Reply with ONLY a JSON array, one object per post:
   "Match – 2BHK, ₹28k, ~3 km away, furnished".`;
 
 export const MAX_PROMPT = 8000; // characters; also enforced by the server
-export const systemPrompt = (prompt?: string) => `${prompt?.trim().slice(0, MAX_PROMPT) || DEFAULT_PROMPT}\n${OUTPUT_CONTRACT}`;
+// `extra`: instructions only the server adds (never user-editable), after the contract so they can extend the reply shape.
+export const systemPrompt = (prompt?: string, extra = '') => `${prompt?.trim().slice(0, MAX_PROMPT) || DEFAULT_PROMPT}\n${OUTPUT_CONTRACT}${extra && `\n${extra}`}`;
 
 // FB permalinks carry a stable numeric id; otherwise fall back to a hash of the content.
 export function postId(href: string | undefined, fallback: string): string {
@@ -109,7 +110,7 @@ export const providerOf = (key: string): Choice =>
 // `usage`, if given, is filled with the call's token counts so the caller can charge the real cost.
 export async function classify(
   posts: Post[], filters: Filters = {}, apiKey: string, provider: Provider, model?: string, prompt?: string,
-  usage?: { input: number; output: number },
+  usage?: { input: number; output: number }, extra?: string,
 ): Promise<Result[]> {
   const { url, model: defaultModel } = PROVIDERS[provider];
   const slim = posts.map(({ id, text }) => ({ id, text }));
@@ -126,8 +127,8 @@ export async function classify(
           : { 'content-type': 'application/json', authorization: `Bearer ${apiKey}` },
       body: JSON.stringify(
         provider === 'anthropic'
-          ? { ...common, max_tokens: 4000, system: systemPrompt(prompt), messages: [{ role: 'user', content: user }] }
-          : { ...common, messages: [{ role: 'system', content: systemPrompt(prompt) }, { role: 'user', content: user }] },
+          ? { ...common, max_tokens: 4000, system: systemPrompt(prompt, extra), messages: [{ role: 'user', content: user }] }
+          : { ...common, messages: [{ role: 'system', content: systemPrompt(prompt, extra) }, { role: 'user', content: user }] },
       ),
     });
 

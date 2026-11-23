@@ -37,3 +37,7 @@ noman-memory.md
 .idea/
 .dev.vars
 .wrangler/
+
+# Website: build output; its .env.example is safe to publish (no secrets)
+koo-web/dist/
+!koo-web/.env.example

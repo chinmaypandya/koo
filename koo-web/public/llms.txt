@@ -1,0 +1,28 @@
+# Koo
+
+> Koo is a free, open-source Chrome extension that finds flats for rent in Facebook groups. It scrolls the group, reads every post, and uses AI to keep only the flats that match your budget, location, size, amenities and other filters, with the poster's phone number ready to call.
+
+Koo was built for flat hunting in Indian cities such as Bangalore, where most rentals are posted in Facebook groups like "Flats and Flatmates Without Brokers". Hundreds of posts appear every day; Koo turns a week of manual scrolling into a few minutes. In its first real run it read 146 posts in 4 minutes and found 1 match.
+
+## How it works
+
+1. Install the Koo extension in Chrome (load the folder from GitHub; no coding needed).
+2. Open a Facebook flat-rental group while logged in to Facebook.
+3. Set your budget, location, distance, flat size (BHK), amenities and gender preference.
+4. Press Start. Koo reads each post, expands "See more", and the AI checks it against your filters.
+5. Matches appear with rent, deposit, BHK, distance, society name and the poster's phone number. Export to Excel (CSV).
+
+Koo only reads posts. It does not post, comment or message anyone. It never reads the same post twice.
+
+## Pricing
+
+- Free with your own AI key (OpenAI, Google Gemini or Anthropic Claude).
+- Or Koo credits, no key needed: 50 free credits on sign-up; 1 credit = ₹1 = 1 AI request (5 posts).
+
+## Links
+
+- [Get Koo on GitHub](https://github.com/chinmaypandya/koo): source code and install steps
+- [Why I built Koo (LinkedIn)](https://www.linkedin.com/posts/chinmaypandya043_ai-sideproject-weekendproject-ugcPost-7527367630064791552-ai5y/)
+- [Koo v2: the bird leaves the side panel (LinkedIn)](https://www.linkedin.com/posts/chinmaypandya043_productdesign-browserautomation-buildinpublic-ugcPost-7527868425470226432-KMAa/)
+- [First real run: 146 posts in 4 minutes (LinkedIn)](https://www.linkedin.com/posts/chinmaypandya043_i-searched-across-146-flat-posts-in-4-mins-ugcPost-7528114753991516160-0V1-/)
+- Contact: chinmaypandya043@gmail.com · [LinkedIn](https://www.linkedin.com/in/chinmaypandya043/)

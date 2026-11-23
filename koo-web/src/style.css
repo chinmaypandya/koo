@@ -45,6 +45,7 @@ section { position: relative; }
 .hero { height: 100vh; min-height: 640px; overflow: hidden; perspective: 900px; }
 .hero .copy { position: absolute; left: var(--gut); top: 18vh; max-width: 520px; display: grid; gap: 18px; z-index: 2; }
 .eyebrow { margin: 0; font-size: 13px; letter-spacing: .2em; text-transform: uppercase; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .lede { margin: 0; font: 400 clamp(48px, 7vw, 104px)/.92 var(--serif); letter-spacing: -.01em; }
 .lede em, .appoint em { color: var(--blue); }
 .sub { margin: 0; max-width: 34ch; font-size: 17px; opacity: .75; }

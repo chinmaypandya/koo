@@ -32,14 +32,14 @@ export function Hero() {
       <Hatch band={0.35} className="clear-copy" />
       <div className="copy">
         <p className="eyebrow reveal">Flats in Facebook groups</p>
-        <h2 className="lede reveal">Stop scrolling.<br /><em>Appoint Koo.</em></h2>
+        <h1 className="lede reveal"><span className="sr-only">Koo, the AI Facebook flat finder: </span>Stop scrolling.<br /><em>Appoint Koo.</em></h1>
         <p className="sub reveal">Koo reads every post in your flat groups and keeps only the ones that fit you.</p>
         <div className="reveal">
           <Magnetic><button className="pill" onClick={() => scrollTo('#struggle')} data-hover>Scroll to take off ↓</button></Magnetic>
         </div>
       </div>
       <img className="hero-koo" src="/koo/hero.png" alt="Koo, a small blue bird with aviator goggles and a backpack with a house on it" />
-      <h1 className="wordmark" aria-label="Koo">{'KOO'.split('').map((c, i) => <span key={i}>{c}</span>)}</h1>
+      <p className="wordmark" aria-hidden="true">{'KOO'.split('').map((c, i) => <span key={i}>{c}</span>)}</p>
     </section>
   );
 }

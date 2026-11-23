@@ -8,7 +8,10 @@ const LINES = [
   '100s of posts a day.', '1000s a week.', 'New ones every few hours.', 'Reply late? Already booked.',
   'Scroll all day to stay first.', 'Then filter each one by hand.',
 ];
-const chars = (s: string) => s.split('').map((c, i) => <span key={i} className="ch">{c === ' ' ? ' ' : c}</span>);
+// Letters animate one by one, but each word stays together so lines wrap between words on narrow screens.
+const chars = (s: string) => s.split(' ').map((w, i) => (
+  <span key={i} className="word">{w.split('').map((c, j) => <span key={j} className="ch">{c}</span>)}</span>
+));
 
 export function Struggle() {
   const root = useRef<HTMLElement>(null);
@@ -31,7 +34,7 @@ export function Struggle() {
   return (
     <section id="struggle" className="struggle" ref={root}>
       <div className="struggle-stage">
-        <Hatch band={0.3} />
+        <Hatch band={0.3} className="clear-center" />
         <p className="label">The struggle</p>
         <div className="lines">{LINES.map((l) => <p key={l} className="line">{chars(l)}</p>)}</div>
         <p className="after">There’s a better way to find a flat.</p>

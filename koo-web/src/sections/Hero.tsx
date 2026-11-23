@@ -29,7 +29,7 @@ export function Hero() {
 
   return (
     <section id="home" className="hero" ref={root}>
-      <Hatch band={0.35} />
+      <Hatch band={0.35} className="clear-copy" />
       <div className="copy">
         <p className="eyebrow reveal">Flats in Facebook groups</p>
         <h2 className="lede reveal">Stop scrolling.<br /><em>Appoint Koo.</em></h2>

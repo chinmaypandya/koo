@@ -4,7 +4,7 @@ import { credits } from './auth';
 import { gsap, ScrollTrigger, scrollTo, still } from './smooth';
 
 // Engraving-style backdrop: horizontal ink lines whose weight follows a slow, drifting cloud shape, and bend around the cursor.
-export function Hatch({ ink = '15,21,34', band = 0.55 }: { ink?: string; band?: number }) {
+export function Hatch({ ink = '15,21,34', band = 0.55, className = '' }: { ink?: string; band?: number; className?: string }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     const c = ref.current!, g = c.getContext('2d')!;
@@ -37,7 +37,7 @@ export function Hatch({ ink = '15,21,34', band = 0.55 }: { ink?: string; band?: 
     if (still) draw(0);
     return () => { io.disconnect(); cancelAnimationFrame(raf); removeEventListener('resize', size); removeEventListener('pointermove', move); };
   }, [ink, band]);
-  return <canvas className="hatch" ref={ref} aria-hidden="true" />;
+  return <canvas className={`hatch ${className}`} ref={ref} aria-hidden="true" />;
 }
 
 // A dot that trails the pointer and swells over anything clickable.

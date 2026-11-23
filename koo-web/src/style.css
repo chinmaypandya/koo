@@ -172,6 +172,11 @@ section { position: relative; }
   .match { left: var(--gut); right: calc(var(--gut) + 14px); bottom: 6vh; }
   .dancer { width: 80px; right: 0; top: -70px; }
   .steps { gap: 12px; }
+  /* Phones: the video gets about half the screen, with a clear gap before the steps. */
+  .demo-stage { gap: 40px; padding-top: 84px; }
+  .screen video { height: min(42vh, 380px); }
+  .step { font-size: 21px; }
+  .rec { display: none; } /* would sit on the recording's own title bar at this size */
   .world { grid-template-columns: repeat(15, 160px); grid-auto-rows: 100px; background-size: 160px 100px; }
   .tile { font-size: 16px; }
 }

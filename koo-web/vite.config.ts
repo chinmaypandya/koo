@@ -23,6 +23,6 @@ export default defineConfig(({ mode }) => {
   const site = (loadEnv(mode, process.cwd(), 'VITE_').VITE_SITE_URL ?? '').replace(/\/$/, '');
   return {
     plugins: [react(), seo(site)],
-    build: { rollupOptions: { input: { index: resolve(__dirname, 'index.html'), login: resolve(__dirname, 'login.html') } } },
+    build: { rollupOptions: { input: { index: resolve(import.meta.dirname, 'index.html'), login: resolve(import.meta.dirname, 'login.html') } } },
   };
 });

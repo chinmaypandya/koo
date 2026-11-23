@@ -262,7 +262,7 @@ function Credits({ s }: { s: Record<string, any> }) {
       <p className="muted">{s.email}</p>
       <p className="balance">🪙 {Number(s.credits ?? 0).toFixed(1)} <small>Koo credits</small></p>
       <p className="muted">≈ {Math.floor(Number(s.credits ?? 0) * REQUESTS_PER_CREDIT)} AI requests left (5 posts each).</p>
-      <p className="muted">1 Koo credit = ₹1 = {REQUESTS_PER_CREDIT} AI requests. Minimum top-up ₹100.</p>
+      <p className="muted">1 Koo credit = ₹1 = 1 AI request (5 posts). Minimum top-up ₹100.</p>
       <div className="exportbar">
         {PACKS.map((r) => <button key={r} onClick={() => buy(r)}>₹{r} → {creditsFor(r)} 🪙</button>)}
       </div>

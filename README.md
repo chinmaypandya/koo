@@ -119,7 +119,7 @@ rooftop) is smooth.
 | **You need** | An OpenAI, Google Gemini or Anthropic key | *Coming soon:* a Google account and UPI. For now: the local server |
 | **Set up in** | ⚙️ Search settings → Provider | ⚙️ Provider = Koo credits (sign-in is switched off for now) |
 | **Your key goes to** | Only that provider (stored on your computer, unencrypted) | Not needed; Koo's key is used |
-| **Cost** | Billed by your provider | **1 🪙 = ₹1 = 5 AI requests** (5 posts each). Packs: ₹100 → 100 🪙 · ₹200 → 200 🪙 · ₹500 → 500 🪙 |
+| **Cost** | Billed by your provider | **1 🪙 = ₹1 = 1 AI request** (5 posts). Packs: ₹100 → 100 🪙 · ₹200 → 200 🪙 · ₹500 → 500 🪙 |
 | **Free to try** | — | **10 🪙 free** on sign-up (50 requests = 250 posts) |
 
 > **Local mode:** while no central Koo API is deployed, Koo credits use the **local server** at `localhost:8787`
@@ -193,20 +193,20 @@ When a cloud API is deployed and the extension is built with `WXT_API_URL`, Koo 
 Panel ──sign in (Google)──► /auth      → Koo token (only its hash is stored)
 Panel ──buy ₹200─────────► /checkout  → UPI-only Razorpay Payment Link (user id attached)
 User pays by UPI ────────► Razorpay ──► /razorpay-webhook → signature check → +100 🪙, exactly once
-Scanner ─5 posts────────► /classify  → checks credits → AI with your key → charges 0.2 🪙 (1 request)
+Scanner ─5 posts────────► /classify  → checks credits → AI with your key → charges 1 🪙 (1 request)
 ```
 
 | Endpoint | Purpose |
 |---|---|
-| `POST /auth` | Google access token → Koo token; a new account starts with 10 free 🪙 |
+| `POST /auth` | Google access token → Koo token; a new account starts with 50 free 🪙 |
 | `GET /me` | Email and credit balance |
 | `POST /checkout` | UPI-only Razorpay Payment Link for a ₹100 / ₹200 / ₹500 pack |
 | `POST /razorpay-webhook` | Verifies Razorpay's signature and credits the payment exactly once |
-| `POST /classify` | Up to 5 posts; charges 0.2 🪙; refuses below 0.2 🪙; failed AI calls cost nothing |
+| `POST /classify` | Up to 5 posts; charges 1 🪙; refuses below 1 🪙; failed AI calls cost nothing |
 
-**Pricing** (all in `lib/pricing.ts`): 1 credit = ₹1 paid = 5 AI requests; a request is one batch of 5 posts
-(0.2 credits); minimum top-up ₹100; new accounts get 10 free credits. The API rejects requests with more than 5 posts.
-Your margin is ₹0.20 per request minus the AI provider's cost for 5 posts; Razorpay takes about 2% + GST per payment.
+**Pricing** (all in `lib/pricing.ts`): 1 credit = ₹1 paid = 1 AI request; a request is one batch of 5 posts
+(1 credit); minimum top-up ₹100; new accounts get 50 free credits. The API rejects requests with more than 5 posts.
+Your margin is ₹1 per request minus the AI provider's cost for 5 posts; Razorpay takes about 2% + GST per payment.
 
 </details>
 
